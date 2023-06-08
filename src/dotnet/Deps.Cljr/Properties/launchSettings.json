@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Deps.Cljr": {
+      "commandName": "Project",
+      "commandLineArgs": "-Sdeps deps-thing -Strace -STree -AA1:A2:A3 -XX1:X2:X3 a/b/c"
+    }
+  }
+}

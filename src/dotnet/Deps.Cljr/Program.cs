@@ -162,7 +162,15 @@ internal class Program
                 continue;
             }
 
+            if ( arg == "-A")
+            {
+                EndExecution(1, "-A requires an alias");
+            }
+
             if ( arg.StartsWith("-A"))
+            {
+                
+            }
 
             if (arg.StartsWith("-M"))
             { }

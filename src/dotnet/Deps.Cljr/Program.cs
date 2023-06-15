@@ -1,18 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System.Collections.Generic;
-using System;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics.Metrics;
-using System.Diagnostics;
-using System.IO;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using static System.Net.WebRequestMethods;
-using System.Runtime.Intrinsics.Arm;
-using System.Runtime.Intrinsics.X86;
-using System.Threading;
-using System.Xml.Linq;
+﻿using System.Runtime.InteropServices;
 
 namespace Deps.Cljr;
 
@@ -40,20 +26,24 @@ internal class Program
         EndExecution(exitCode);
     }
 
-    static void EndExecution(int exitCode) => Environment.Exit(exitCode);
+    public static void EndExecution(int exitCode) => Environment.Exit(exitCode);
 
-    static void Warn(string message) => Console.Error.WriteLine(message);
+    public static void Warn(string message) => Console.Error.WriteLine(message);
 
-    static List<string> DeprecatedPrefixes = new()
+    static readonly List<string> DeprecatedPrefixes = new()
     {
         "-R", "-C", "-O"
     };
 
     static bool StartsWithDeprecatedPrefix(string arg) => DeprecatedPrefixes.Any(p => p.StartsWith(arg));
 
+    static string? NonBlank(string s) => string.IsNullOrEmpty(s) ? null : s;
 
+    static string ExtractAlias(string s) => s[2..];
 
-    static CommandBase ParseArgs(string[] args)
+    static List<string> GetArgs(int i, string[] args) => args.Skip(i).ToList();
+
+    public static CommandBase ParseArgs(string[] args)
     {
         CljOpts opts = new();
 
@@ -72,7 +62,7 @@ internal class Program
                     case "-T:":
                     case "-A:":
                         if (i >= args.Length)
-                            EndExecution(1, $"Invalid arguments, no value following {arg}.");
+                            return new ErrorCommand(1, $"Invalid arguments, no value following {arg}.");
                         else
                             arg += args[i++];
                         break;
@@ -80,22 +70,20 @@ internal class Program
             }
 
             if (StartsWithDeprecatedPrefix(arg))
-                EndExecution(1, $"{arg[..2]} is no longer supported, use -A with repl, -M for main, -X for exec, -T for tool");
+                return new ErrorCommand(1, $"{arg[..2]} is no longer supported, use -A with repl, -M for main, -X for exec, -T for tool");
 
             if (arg == "-Sresolve-tags")
-                EndExecution(1, "Option changed, use: clj -X:deps git-resolve-tags");
+                return new ErrorCommand(1, "Option changed, use: clj -X:deps git-resolve-tags");
 
 
             if (arg == "-version" || arg == "--version")
             {
-                PrintVersion();
-                EndExecution(0);
+                return new VersionCommand();
             }
 
             if (arg == "-h" || arg == "--help")
             {
-                PrintHelp();
-                EndExecution(0);
+                return new HelpCommand();
             }
 
             if (arg.StartsWith("-J"))
@@ -110,13 +98,13 @@ internal class Program
                 continue;
             }
 
-            if ( arg.StartsWith("-S") )
+            if (arg.StartsWith("-S"))
             {
-                switch (arg.Substring(2))
+                switch (ExtractAlias(arg))
                 {
                     case "deps":
                         if (i >= args.Length)
-                            EndExecution(1, $"Invalid arguments, no value following {arg}.");
+                            return new ErrorCommand(1, $"Invalid arguments, no value following {arg}.");
                         var edn = args[i++];
                         opts = opts with { Deps = edn };
                         break;
@@ -128,7 +116,7 @@ internal class Program
                         break;
                     case "cp":
                         if (i >= args.Length)
-                            EndExecution(1, $"Invalid arguments, no value following {arg}.");
+                            return new ErrorCommand(1, $"Invalid arguments, no value following {arg}.");
                         var cp = args[i++];
                         opts = opts with { Classpaths = cp };
                         break;
@@ -146,66 +134,72 @@ internal class Program
                         break;
                     case "threads":
                         if (i >= args.Length)
-                            EndExecution(1, $"Invalid arguments, no value following {arg}.");
+                            return new ErrorCommand(1, $"Invalid arguments, no value following {arg}.");
                         if (Int32.TryParse(args[i++], out var numThreads))
                             opts = opts with { Threads = numThreads };
                         else
-                            EndExecution(1, $"Invalid argument, non-integer following {arg}");
+                            return new ErrorCommand(1, $"Invalid argument, non-integer following {arg}");
                         break;
                     case "trace":
                         opts = opts.WithFlag(CommandLineFlags.Trace);
                         break;
                     default:
-                        EndExecution(1, $"Unknown command line argument: {arg}");
-                        break;
+                        return new ErrorCommand(1, $"Unknown command line argument: {arg}");
                 }
                 continue;
             }
 
-            if ( arg == "-A")
+            if (arg == "-A")
             {
-                EndExecution(1, "-A requires an alias");
+                return new ErrorCommand(1, "-A requires an alias");
             }
 
-            if ( arg.StartsWith("-A"))
+            if (arg.StartsWith("-A"))
             {
-                
+                opts.ReplAliases.Add(ExtractAlias(arg));
+                continue;
             }
 
             if (arg.StartsWith("-M"))
-            { }
-            
-            if (arg.StartsWith("-X"))
-            { }
+            {
+                return new MainCommand(opts, NonBlank(ExtractAlias(arg)), GetArgs(i, args));
+            }
 
-            if (arg == "-T")
-            { }
+            if (arg.StartsWith("-X"))
+            {
+                return new ExecCommand(opts, NonBlank(ExtractAlias(arg)), GetArgs(i, args));
+            }
+
+            if (arg.StartsWith("-T:"))
+            {
+                return new ToolCommand(opts, null, NonBlank(ExtractAlias(arg)), GetArgs(i, args));
+            }
 
             if (arg.StartsWith("-T"))
-            { }
-                      
-            if ( arg == "--")
-            { }
+            {
+                return new ToolCommand(opts, NonBlank(ExtractAlias(arg)), null, GetArgs(i, args));
+            }
 
+            if (arg == "--")
+            {
+                return new ReplCommand(opts, null, GetArgs(i, args));
+            }
         }
 
+        return new ReplCommand(opts, null, new());
+    }
 
 
-        static void PrintVersion()
-        {
-            Console.WriteLine("How am I supposed to know what version this is?");
-        }
-
-
-        static void PrintHelp()
-        {
-            Console.WriteLine($"Version: ???");
-            Console.WriteLine();
-            Console.WriteLine(@"You use the Clojure tools('clj' or 'clojure') to run Clojure programs
+    public static void PrintHelp()
+    {
+        Console.WriteLine($"Version: ???");
+        Console.WriteLine();
+        Console.WriteLine(@"You use the Clojure tools('clj' or 'clojure') to run Clojure programs
 on the JVM, e.g.to start a REPL or invoke a specific function with data.
 The Clojure tools will configure the JVM process by defining a classpath
 (of desired libraries), an execution environment(JVM options) and
 specifying a main class and args.
+
 
 Using a deps.edn file(or files), you tell Clojure where your source code
 resides and what libraries you need.Clojure will then calculate the full
@@ -281,11 +275,8 @@ Programs provided by :deps alias:
 For more info, see:
  https://clojure.org/guides/deps_and_cli
  https://clojure.org/reference/repl_and_main");
-        }
-
-
-
     }
-
 }
+
+
 

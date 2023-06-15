@@ -8,6 +8,6 @@ namespace Deps.Cljr
 {
     internal class ExecCommand : CommandBase
     {
-        public ExecCommand(CljOpts cljOpts) : base(cljOpts) { }
+        public ExecCommand(CljOpts cljOpts, string? commandAliases, List<string> commandArgs) : base(cljOpts, commandAliases, commandArgs) { }
     }
 }

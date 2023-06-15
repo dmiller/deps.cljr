@@ -8,6 +8,6 @@ namespace Deps.Cljr
 {
     internal class ReplCommand : CommandBase
     {
-        public ReplCommand(CljOpts cljOpts) : base(cljOpts) { }
+        public ReplCommand(CljOpts cljOpts, string? commandAliases, List<string> commandArgs) : base(cljOpts, commandAliases, commandArgs) { }
     }
 }

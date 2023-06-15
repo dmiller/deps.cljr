@@ -9,11 +9,16 @@ namespace Deps.Cljr
 {
     internal abstract class CommandBase
     {
-        public CljOpts CljOpts { get; set; }
+        public CljOpts CljOpts { get; init; }
+        public string? CommandAliases { get; init; }
+        public List<string> Args { get; init; }
 
-        public CommandBase(CljOpts cljOpts)
+
+        public CommandBase(CljOpts cljOpts, string? commandAliases, List<string> args)
         {
             CljOpts = cljOpts;
+            CommandAliases = commandAliases;
+            Args = args;
         }
     }
 }

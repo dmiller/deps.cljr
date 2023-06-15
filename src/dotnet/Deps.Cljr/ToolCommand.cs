@@ -8,6 +8,11 @@ namespace Deps.Cljr
 {
     internal class ToolCommand : CommandBase
     {
-        public ToolCommand(CljOpts opts) : base(opts) { }
+        public string? ToolName { get; init; }
+
+        public ToolCommand(CljOpts cljOpts, string? toolName, string? commandAliases, List<string> commandArgs) : base(cljOpts, commandAliases, commandArgs) 
+        {
+            ToolName = toolName;
+        }
     }
 }

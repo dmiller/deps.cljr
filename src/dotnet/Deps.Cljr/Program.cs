@@ -4,7 +4,7 @@ namespace Deps.Cljr;
 
 
 
-internal class Program
+public class Program
 {
     static int Main(string[] args)
     {
@@ -35,7 +35,7 @@ internal class Program
         "-R", "-C", "-O"
     };
 
-    static bool StartsWithDeprecatedPrefix(string arg) => DeprecatedPrefixes.Any(p => p.StartsWith(arg));
+    static bool StartsWithDeprecatedPrefix(string arg) => DeprecatedPrefixes.Any(p => arg.StartsWith(p));
 
     static string? NonBlank(string s) => string.IsNullOrEmpty(s) ? null : s;
 
@@ -107,6 +107,10 @@ internal class Program
                             return new ErrorCommand(1, $"Invalid arguments, no value following {arg}.");
                         var edn = args[i++];
                         opts = opts with { Deps = edn };
+                        break;
+                    case "pom":
+                        Warn("We are CLR! We don't do POM,");
+                        opts = opts.WithFlag(CommandLineFlags.Pom); ;
                         break;
                     case "path":
                         opts = opts.WithFlag(CommandLineFlags.Path); ;

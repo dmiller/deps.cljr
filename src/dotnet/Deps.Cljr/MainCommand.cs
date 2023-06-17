@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Deps.Cljr
+namespace Deps.Cljr;
+
+public class MainCommand : CommandBase
 {
-    internal class MainCommand : CommandBase
-    {
-        public MainCommand(CljOpts cljOpts, string? commandAliases, List<string> commandArgs) : base(cljOpts, commandAliases, commandArgs) { }
-    }
+    public MainCommand(CljOpts cljOpts, string? commandAliases, List<string> commandArgs) : base(cljOpts, commandAliases, commandArgs) { }
 }

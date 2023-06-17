@@ -4,23 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Deps.Cljr
+namespace Deps.Cljr;
+
+public class ErrorCommand : ShortCircuitCommand
 {
-    internal class ErrorCommand : ShortCircuitCommand
+    public int ExitCode { get; init; }
+    public string Message { get; init; }
+
+    public ErrorCommand(int exitCode, string message)
     {
-        public int ExitCode { get; init; }
-        public string Message { get; init; }
+        ExitCode = exitCode;
+        Message = message;
+    }
 
-        public ErrorCommand(int exitCode, string message)
-        {
-            ExitCode = exitCode;
-            Message = message;
-        }
-
-        public override void Execute()
-        {
-            Program.Warn(Message);
-            Program.EndExecution(ExitCode);
-        }
+    public override void Execute()
+    {
+        Program.Warn(Message);
+        Program.EndExecution(ExitCode);
     }
 }

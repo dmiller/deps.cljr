@@ -4,18 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Deps.Cljr
+namespace Deps.Cljr;
+
+public class VersionCommand : ShortCircuitCommand
 {
-    internal class VersionCommand : ShortCircuitCommand
+    public VersionCommand() { }
+
+    public override void Execute()
     {
-        public VersionCommand() { }
-
-        public override void Execute()
-        {
-            Console.WriteLine("How am I supposed to know what version this is?");
-            Program.EndExecution(0);
-        }
-
+        Console.WriteLine("How am I supposed to know what version this is?");
+        Program.EndExecution(0);
     }
+
 }
 

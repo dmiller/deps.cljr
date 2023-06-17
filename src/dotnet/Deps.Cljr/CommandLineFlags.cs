@@ -4,19 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Deps.Cljr
+namespace Deps.Cljr;
+
+[Flags]
+public enum CommandLineFlags
 {
-    [Flags]
-    internal enum CommandLineFlags
-    {
-        Describe,
-        Force,
-        Path,
-        Pom,
-        Prep,
-        Repro,
-        Trace,
-        Tree,
-        Verbose
-    }
+    Describe=1,
+    Force=2,
+    Path=4,
+    Pom=8,
+    Prep=16,
+    Repro=32,
+    Trace=64,
+    Tree=128,
+    Verbose=256
 }

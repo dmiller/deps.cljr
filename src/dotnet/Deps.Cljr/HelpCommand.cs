@@ -4,16 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Deps.Cljr
-{
-    internal class HelpCommand : ShortCircuitCommand
-    {
-        public HelpCommand() { }
+namespace Deps.Cljr;
 
-        public override void Execute()
-        {
-            Program.PrintHelp();
-            Program.EndExecution(0);
-        }
+
+public class HelpCommand : ShortCircuitCommand
+{
+    public HelpCommand() { }
+
+    public override void Execute()
+    {
+        Program.PrintHelp();
+        Program.EndExecution(0);
     }
 }

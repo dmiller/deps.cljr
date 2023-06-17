@@ -5,20 +5,19 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Deps.Cljr
+namespace Deps.Cljr;
+
+public abstract class CommandBase
 {
-    internal abstract class CommandBase
+    public CljOpts CljOpts { get; init; }
+    public string? CommandAliases { get; init; }
+    public List<string> Args { get; init; }
+
+
+    public CommandBase(CljOpts cljOpts, string? commandAliases, List<string> args)
     {
-        public CljOpts CljOpts { get; init; }
-        public string? CommandAliases { get; init; }
-        public List<string> Args { get; init; }
-
-
-        public CommandBase(CljOpts cljOpts, string? commandAliases, List<string> args)
-        {
-            CljOpts = cljOpts;
-            CommandAliases = commandAliases;
-            Args = args;
-        }
+        CljOpts = cljOpts;
+        CommandAliases = commandAliases;
+        Args = args;
     }
 }

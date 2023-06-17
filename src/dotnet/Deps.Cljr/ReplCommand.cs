@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Deps.Cljr
 {
-    internal class ReplCommand : CommandBase
+    public class ReplCommand : CommandBase
     {
         public ReplCommand(CljOpts cljOpts, string? commandAliases, List<string> commandArgs) : base(cljOpts, commandAliases, commandArgs) { }
     }

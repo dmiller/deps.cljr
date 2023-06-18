@@ -97,8 +97,8 @@ public class ParsingTests
         string cli = "-Srepro -Sdeps ABC -Scp DEF -Sthreads 12 -X:A: B 12 13";
         string[] args = cli.Split(new char[] { ' ' });
         var items = CommandLineParser.Parse(args);
-        Assert.True(items.Deps.Equals("ABC"));
-        Assert.True(items.ForceClasspath.Equals("DEF"));
+        Assert.True(items.Deps?.Equals("ABC"));
+        Assert.True(items.ForceClasspath?.Equals("DEF"));
         Assert.True(items.Threads == 12);
     }
 
@@ -176,6 +176,7 @@ public class ParsingTests
         var items = CommandLineParser.Parse(args);
         Assert.True(items.Mode == mode);
         Assert.False(items.CommandAliases.ContainsKey(mode));
+        Assert.True(items.CommandArgs.Zip(expectedArgs.ToList()).All(x => x.First.Equals(x.Second)));
     }
 
     [Theory]

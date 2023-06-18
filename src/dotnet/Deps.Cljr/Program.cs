@@ -1,4 +1,10 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.ComponentModel;
+using System.ComponentModel.Design;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text.Unicode;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Deps.Cljr;
 
@@ -11,7 +17,7 @@ public class Program
 
     public static void PrintHelp()
     {
-        Console.WriteLine($"Version: ???");
+        Console.WriteLine($"Version: {Version}");
         Console.WriteLine();
         Console.WriteLine(@"You use the Clojure tools('clj' or 'clojure') to run Clojure programs
 on the JVM, e.g.to start a REPL or invoke a specific function with data.
@@ -96,6 +102,13 @@ For more info, see:
  https://clojure.org/reference/repl_and_main");
     }
 
+    static void PrintVersion()
+    {
+        Console.WriteLine($"ClojureCLR CLI Version: {Version}");
+    }
+
+
+    static void Warn(string message) => Console.Error.WriteLine(message);
 
     static void EndExecution(int exitCode, string message)
     {
@@ -103,17 +116,279 @@ For more info, see:
         EndExecution(exitCode);
     }
 
+    static void EndExecution(int exitCode) => Environment.Exit(exitCode);
 
-    public static void EndExecution(int exitCode) => Environment.Exit(exitCode);
+    static readonly string Version = typeof(Program).Assembly.GetName().Version!.ToString();
 
-    public static void Warn(string message) => Console.Error.WriteLine(message);
+
+    static bool IsNewerFile(string filename1, string filename2)
+    {
+        if (!File.Exists(filename1)) return false;
+        if (!File.Exists(filename2)) return true;
+        var mod1 = new FileInfo(filename1).LastWriteTimeUtc;
+        var mod2 = new FileInfo(filename2).LastWriteTimeUtc;
+        return mod1 > mod2;
+    }
+
+    static string GetStringHash(string s)
+    {
+        var hash = MD5.Create().ComputeHash(System.Text.UTF8Encoding.UTF8.GetBytes(s));
+        return BitConverter.ToString(hash);
+    }
+
+
 
     static int Main(string[] args)
     {
-        foreach (string arg in args)
+        var cliArgs = CommandLineParser.Parse(args);
+
+        if (cliArgs.IsError)
         {
-            Console.WriteLine(arg);
+            Warn(cliArgs.ErrorMessage!);
+            return 1;
         }
+
+        if (cliArgs.Mode == EMode.Help)
+        {
+            PrintHelp();
+            return 0;
+        }
+
+        if (cliArgs.Mode == EMode.Version)
+        {
+            PrintVersion();
+            return 0;
+        }
+
+        if (cliArgs.HasFlag("pom"))
+            Warn("We are CLR!  We don't do -Spom");
+
+        if (cliArgs.JvmOpts.Count > 0)
+            Warn("We are CLR!  -Jjvm_opts aren't going to do you much good.");
+
+        var installDir = AppContext.BaseDirectory;
+        //var toolsCp = Path.Combine(InstallDir, $"clojure-tools-{Version}.jar");  // TODO -- what do we do instead?
+
+        // Determine user config directory; if it does not exist, create it
+        var configDir = Environment.GetEnvironmentVariable("CLJ_CONFIG")
+            ?? Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".clojure");
+        if (!Directory.Exists(configDir))
+            Directory.CreateDirectory(configDir);
+
+        // Copy in example deps.edn if no deps.edn in the configDir
+        if (!File.Exists(Path.Join(configDir, "deps.edn")))
+            File.Copy(
+                Path.Join(installDir, "example-deps.edn"),
+                Path.Join(configDir, "deps.edn"));
+
+        // Make sure the configDir tools directory exists.
+        {
+            var configToolsDir = Path.Join(configDir, "tools");
+
+            if (!Directory.Exists(configToolsDir))
+                Directory.CreateDirectory(configToolsDir);
+        }
+
+        // Make sure the tools.edn file is up-to-date.
+        {
+            var installToolsEdn = Path.Join(installDir, "tools.edn");
+            var configToolsEdn = Path.Join(configDir, "tools", "tools.edn");
+            if (IsNewerFile(installToolsEdn, configToolsEdn))
+                File.Copy(installToolsEdn, configToolsEdn, true);
+        }
+
+        // Determine the user cache directory
+        string userCacheDir = Environment.GetEnvironmentVariable("CLJ_CACHE") ?? Path.Join(configDir, ".cpcache");
+
+        // Chain deps.edn in config paths. repro=skip config dir
+        var configProject = "deps.edn";
+        string configUser;
+        string[] configPaths;
+
+        if (cliArgs.HasFlag("repro"))
+        {
+            configPaths = new string[] { Path.Join(installDir, "deps.edn"), "deps.edn" };
+        }
+        else
+        {
+            configUser = Path.Join(configDir, "deps.edn");
+            configPaths = new string[] { Path.Join(installDir, "deps.edn"), configUser, "deps.edn" };
+        }
+
+        // Determine whether to use user or project cache
+        var cacheDir = File.Exists("deps.edn") ? ".cpcache" : userCacheDir;
+
+        // Construct location of cached classpath file
+        var cacheVersion = "4";
+        string replAliases = cliArgs.GetCommandAlias(EMode.Repl);
+        string execAliases = cliArgs.GetCommandAlias(EMode.Exec);
+        string mainAliases = cliArgs.GetCommandAlias(EMode.Main);
+        string toolAliases = cliArgs.GetCommandAlias(EMode.Tool);
+        string depsData = cliArgs.Deps ?? string.Empty;
+        string toolName = cliArgs.ToolName ?? string.Empty;
+        string configPathString = String.Join('|', configPaths);
+
+        var cacheKey = $"{cacheVersion}|{replAliases}|{execAliases}|{mainAliases}|{depsData}|{toolName}|{toolAliases}|{configPathString}";
+        var cacheKeyHash = GetStringHash(cacheKey).Replace("-", "");
+
+        var cpFile = Path.Join(cacheDir, $"{cacheKeyHash}.cp");
+        var jvmFile = Path.Join(cacheDir, $"{cacheKeyHash}.jvm");
+        var mainFile = Path.Join(cacheDir, $"{cacheKeyHash}.main");
+        var basisFile = Path.Join(cacheDir, $"{cacheKeyHash}.basis");
+        var manifestFile = Path.Join(cacheDir, $"{cacheKeyHash}.manifest");
+
+        if (cliArgs.HasFlag("verbose"))
+        {
+            Console.WriteLine($"version      = {Version}");
+            Console.WriteLine($"install_dir  = {installDir}");
+            Console.WriteLine($"config_dir   = {configDir}");
+            Console.WriteLine($"config_paths = {configPaths}");
+            Console.WriteLine($"cache_dir    = {cacheDir}");
+            Console.WriteLine($"cp_file      = {cpFile}");
+            Console.WriteLine();
+        }
+
+        // check for stale classpath
+        var stale = false;
+
+        if (cliArgs.HasFlag("force") || cliArgs.HasFlag("trace") || cliArgs.HasFlag("tree") || cliArgs.HasFlag("prep") || !Directory.Exists(cpFile))
+            stale = true;
+        else if (cliArgs.ToolName is not null && IsNewerFile(Path.Join(configDir, "tools", $"{cliArgs.ToolName}.edn"), cpFile))
+            stale = true;
+        else if (configPaths.ToList().Exists(p => IsNewerFile(p, cpFile)))
+            stale = true;
+        //  test for manifest?
+        //if (Test - Path $ManifestFile) {
+        //  $Manifests = @(Get - Content $ManifestFile)
+        //  if ($Manifests | Where - Object { !(Test - Path $_) -or(Test - NewerFile $_ $CpFile) }) {
+        //    $Stale = $TRUE
+        //  }
+
+        // Make tools args if needed
+        List<string> toolsArgs = new();
+
+        if (stale || cliArgs.HasFlag("pom"))
+        {
+            if (cliArgs.Deps is not null)
+            {
+                toolsArgs.Add("--config-data");
+                toolsArgs.Add((string)cliArgs.Deps);
+            }
+            if (cliArgs.TryGetCommandAlias(EMode.Main, out var alias))
+                toolsArgs.Add($"-M{alias}");
+
+            if (cliArgs.TryGetCommandAlias(EMode.Repl, out  alias))
+                toolsArgs.Add($"-A{alias}");
+
+            if (cliArgs.TryGetCommandAlias(EMode.Exec, out  alias))
+                toolsArgs.Add($"-X{alias}");
+
+            if (cliArgs.Mode == EMode.Tool)
+                toolsArgs.Add("--tool-mode");
+
+            if (cliArgs.ToolName is not null)
+            {
+                toolsArgs.Add("--tool-name");
+                toolsArgs.Add(cliArgs.ToolName);
+            }
+
+            if (cliArgs.TryGetCommandAlias(EMode.Tool, out alias))
+                toolsArgs.Add($"-T{alias}");
+
+            if (cliArgs.ForceClasspath is not null)
+                toolsArgs.Add("--skip-cp");
+
+            if (cliArgs.Threads != 0)
+            {
+                toolsArgs.Add("--threads");
+                toolsArgs.Add(cliArgs.Threads.ToString());
+            }
+
+            if (cliArgs.HasFlag("trace"))
+                toolsArgs.Add("--trace");
+
+            if (cliArgs.HasFlag("tree"))
+                toolsArgs.Add("--tree");
+        }
+
+        
+        // If stale, run make-classpath to refresh cached classpath
+        if ( stale && !cliArgs.HasFlag("describe"))
+        {
+            if (cliArgs.HasFlag("verbose"))  
+                Console.WriteLine("Refreshing classpath");
+
+            // TODO: MAKE PROCESS CALL CORRESPONDING TO:
+            //  & $JavaCmd - XX:-OmitStackTraceInFastThrow @CljJvmOpts -classpath $ToolsCp clojure.main -m clojure.tools.deps.script.make-classpath2  --config-user $ConfigUser --config-project $ConfigProject --basis -file $BasisFile --cp-file $CpFile --jvm-file $JvmFile --main-file $MainFile --manifest-file $ManifestFile @ToolsArgs
+            //  if ($LastExitCode - ne 0) {
+            //      return
+        }
+
+        var classpath =
+            cliArgs.HasFlag("describe") ? ""
+            : cliArgs.ForceClasspath
+            ?? File.ReadAllText(cpFile);
+
+        if (cliArgs.HasFlag("prep")) 
+        { /* already done */ }
+        else if (cliArgs.HasFlag("pom"))
+        {
+            // TODO -- are we doing this?
+            //   & $JavaCmd -XX:-OmitStackTraceInFastThrow @CljJvmOpts -classpath $ToolsCp clojure.main -m clojure.tools.deps.script.generate-manifest2 --config-user $ConfigUser --config-project $ConfigProject --gen=pom @ToolsArgs
+        }
+        else if (cliArgs.HasFlag("path"))
+        {
+            Console.WriteLine(classpath);
+        }
+        else if (cliArgs.HasFlag("describe"))
+        {
+            var pathVector = String.Join(' ',configPaths.Select(p => p.Replace("\\", "\\\\")).ToArray());
+            Console.WriteLine($"{{:version {Version}");
+            // TODO: Finish this:
+             //:config - files[$PathVector]
+             //:config - user "$($ConfigUser.Replace("\","\\"))"
+             //:config - project "$($ConfigProject.Replace("\","\\"))"
+             //:install - dir "$($InstallDir.Replace("\","\\"))"
+             //:config - dir "$($ConfigDir.Replace("\","\\"))"
+             //:cache - dir "$($CacheDir.Replace("\","\\"))"
+             //:force $(if ($Force) { "true"} else { "false"})
+             //:repro $(if ($Repro) { "true"} else { "false"})
+             //:main - aliases "$main_aliases"
+             //:repl - aliases "$repl_aliases"
+             //:exec - aliases "$exec_aliases"}
+             //       "@
+        }
+        else if (cliArgs.HasFlag("tree"))
+        { /* already done */ }
+        else if (cliArgs.HasFlag("trace"))
+        {
+            Console.WriteLine("Wrote trace.edn"); ;
+        }
+        else
+        {
+
+            //if (Test - Path $JvmFile) {
+            //    $JvmCacheOpts = @(Get - Content $JvmFile)
+
+            //        if (($Mode - eq 'exec') -or($Mode - eq 'tool')) {
+            //            & $JavaCmd - XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts "-Dclojure.basis=$BasisFile" - classpath "$CP;$InstallDir/exec.jar" clojure.main - m clojure.run.exec @ClojureArgs
+            //        } else
+            //        {
+            //            if (Test - Path $MainFile) {
+            //    # TODO this seems dangerous
+            //    $MainCacheOpts = @(Get - Content $MainFile) -replace '"', '\"'
+            //            }
+            //            if ($ClojureArgs.Count - gt 0 - and $Mode - eq 'repl') {
+            //                Write - Warning "WARNING: Implicit use of clojure.main with options is deprecated, use -M"
+            //            }
+            //            & $JavaCmd - XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts "-Dclojure.basis=$BasisFile" - classpath $CP clojure.main @MainCacheOpts @ClojureArgs
+            //}
+
+        }
+
+
+
+
 
         return 0;
     }

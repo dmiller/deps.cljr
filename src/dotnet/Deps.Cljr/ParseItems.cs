@@ -10,7 +10,7 @@ public enum EMode { Version, Help, Repl, Tool, Exec, Main }
 
 public class ParseItems
 {
-    public HashSet<string> Flags = new();
+    readonly HashSet<string> Flags = new();
     public string? Deps { get; set; } =null;
     public string? ForceClasspath { get; set; } = null;
     public int Threads { get; set; } = 0;
@@ -41,8 +41,29 @@ public class ParseItems
             CommandAliases[mode] = alias;
     }
 
+    public string GetCommandAlias(EMode mode)
+    {
+        if (CommandAliases.TryGetValue(mode, out var alias))
+            return alias;
+        else
+            return string.Empty;
+    }
+
+    public bool TryGetCommandAlias(EMode mode, out string alias)
+    {
+        return CommandAliases.TryGetValue(mode, out alias);
+    }
+
+
     public void AddFlag(string flag)
     {
         Flags.Add(flag);
     }
+
+    public bool HasFlag(string flag)
+    {
+        return Flags.Contains(flag);
+    }
+
+    public int FlagCount => Flags.Count;
 }

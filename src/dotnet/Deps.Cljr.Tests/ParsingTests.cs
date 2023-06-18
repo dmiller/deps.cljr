@@ -47,8 +47,8 @@ public class ParsingTests
         var cli = $"-S{flag} -X:A: B 12 13";
         string[] args = cli.Split(new char[] { ' ' });
         var items = CommandLineParser.Parse(args);
-        Assert.True(items.Flags.Count == 1);
-        Assert.Contains(flag, items.Flags);
+        Assert.True(items.FlagCount == 1);
+        Assert.True(items.HasFlag(flag));
     }
 
 
@@ -59,8 +59,8 @@ public class ParsingTests
         var cli = "-P -X:A:B 12 13";
         string[] args = cli.Split(new char[] { ' ' });
         var items = CommandLineParser.Parse(args);
-        Assert.True(items.Flags.Count == 1);
-        Assert.Contains("prep", items.Flags);
+        Assert.True(items.FlagCount == 1);
+        Assert.True(items.HasFlag("prep"));
     }
 
     [Theory]

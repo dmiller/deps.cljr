@@ -6,193 +6,8 @@ namespace Deps.Cljr;
 
 public class Program
 {
-    static int Main(string[] args)
-    {
-        foreach (string arg in args)
-        {
-            Console.WriteLine(arg);
-        }
-
-        return 0;
-    }
-
-
-    static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
     static string HomeDir => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-    static void EndExecution(int exitCode, string message)
-    {
-        Warn(message);
-        EndExecution(exitCode);
-    }
-
-    public static void EndExecution(int exitCode) => Environment.Exit(exitCode);
-
-    public static void Warn(string message) => Console.Error.WriteLine(message);
-
-    static readonly List<string> DeprecatedPrefixes = new()
-    {
-        "-R", "-C", "-O"
-    };
-
-    static bool StartsWithDeprecatedPrefix(string arg) => DeprecatedPrefixes.Any(p => arg.StartsWith(p));
-
-    static string? NonBlank(string s) => string.IsNullOrEmpty(s) ? null : s;
-
-    static string ExtractAlias(string s) => s[2..];
-
-    static List<string> GetArgs(int i, string[] args) => args.Skip(i).ToList();
-
-    public static CommandBase ParseArgs(string[] args)
-    {
-        CljOpts opts = new();
-
-        int i = 0;
-        while (i < args.Length)
-        {
-            var arg = args[i++];
-
-            // PowerShell workaround
-            if (IsWindows)
-            {
-                switch (arg)
-                {
-                    case "-M:":
-                    case "-X:":
-                    case "-T:":
-                    case "-A:":
-                        if (i >= args.Length)
-                            return new ErrorCommand(1, $"Invalid arguments, no value following {arg}.");
-                        else
-                            arg += args[i++];
-                        break;
-                }
-            }
-
-            if (StartsWithDeprecatedPrefix(arg))
-                return new ErrorCommand(1, $"{arg[..2]} is no longer supported, use -A with repl, -M for main, -X for exec, -T for tool");
-
-            if (arg == "-Sresolve-tags")
-                return new ErrorCommand(1, "Option changed, use: clj -X:deps git-resolve-tags");
-
-
-            if (arg == "-version" || arg == "--version")
-            {
-                return new VersionCommand();
-            }
-
-            if (arg == "-h" || arg == "--help")
-            {
-                return new HelpCommand();
-            }
-
-            if (arg.StartsWith("-J"))
-            {
-                Warn("We are CLR!  -J options do not apply! (option ignored)");
-                continue;
-            }
-
-            if (arg == "-P")
-            {
-                opts = opts with { Flags = opts.Flags | CommandLineFlags.Prep };
-                continue;
-            }
-
-            if (arg.StartsWith("-S"))
-            {
-                switch (ExtractAlias(arg))
-                {
-                    case "deps":
-                        if (i >= args.Length)
-                            return new ErrorCommand(1, $"Invalid arguments, no value following {arg}.");
-                        var edn = args[i++];
-                        opts = opts with { Deps = edn };
-                        break;
-                    case "pom":
-                        Warn("We are CLR! We don't do POM,");
-                        opts = opts.WithFlag(CommandLineFlags.Pom); ;
-                        break;
-                    case "path":
-                        opts = opts.WithFlag(CommandLineFlags.Path); ;
-                        break;
-                    case "tree":
-                        opts = opts.WithFlag(CommandLineFlags.Tree);
-                        break;
-                    case "cp":
-                        if (i >= args.Length)
-                            return new ErrorCommand(1, $"Invalid arguments, no value following {arg}.");
-                        var cp = args[i++];
-                        opts = opts with { Classpaths = cp };
-                        break;
-                    case "repro":
-                        opts = opts.WithFlag(CommandLineFlags.Repro);
-                        break;
-                    case "force":
-                        opts = opts.WithFlag(CommandLineFlags.Force);
-                        break;
-                    case "verbose":
-                        opts = opts.WithFlag(CommandLineFlags.Verbose);
-                        break;
-                    case "describe":
-                        opts = opts.WithFlag(CommandLineFlags.Describe);
-                        break;
-                    case "threads":
-                        if (i >= args.Length)
-                            return new ErrorCommand(1, $"Invalid arguments, no value following {arg}.");
-                        if (Int32.TryParse(args[i++], out var numThreads))
-                            opts = opts with { Threads = numThreads };
-                        else
-                            return new ErrorCommand(1, $"Invalid argument, non-integer following {arg}");
-                        break;
-                    case "trace":
-                        opts = opts.WithFlag(CommandLineFlags.Trace);
-                        break;
-                    default:
-                        return new ErrorCommand(1, $"Unknown command line argument: {arg}");
-                }
-                continue;
-            }
-
-            if (arg == "-A")
-            {
-                return new ErrorCommand(1, "-A requires an alias");
-            }
-
-            if (arg.StartsWith("-A"))
-            {
-                opts.ReplAliases.Add(ExtractAlias(arg));
-                continue;
-            }
-
-            if (arg.StartsWith("-M"))
-            {
-                return new MainCommand(opts, NonBlank(ExtractAlias(arg)), GetArgs(i, args));
-            }
-
-            if (arg.StartsWith("-X"))
-            {
-                return new ExecCommand(opts, NonBlank(ExtractAlias(arg)), GetArgs(i, args));
-            }
-
-            if (arg.StartsWith("-T:"))
-            {
-                return new ToolCommand(opts, null, NonBlank(ExtractAlias(arg)), GetArgs(i, args));
-            }
-
-            if (arg.StartsWith("-T"))
-            {
-                return new ToolCommand(opts, NonBlank(ExtractAlias(arg)), null, GetArgs(i, args));
-            }
-
-            if (arg == "--")
-            {
-                return new ReplCommand(opts, null, GetArgs(i, args));
-            }
-        }
-
-        return new ReplCommand(opts, null, new());
-    }
-
 
     public static void PrintHelp()
     {
@@ -280,7 +95,27 @@ For more info, see:
  https://clojure.org/guides/deps_and_cli
  https://clojure.org/reference/repl_and_main");
     }
+
+
+    static void EndExecution(int exitCode, string message)
+    {
+        Warn(message);
+        EndExecution(exitCode);
+    }
+
+
+    public static void EndExecution(int exitCode) => Environment.Exit(exitCode);
+
+    public static void Warn(string message) => Console.Error.WriteLine(message);
+
+    static int Main(string[] args)
+    {
+        foreach (string arg in args)
+        {
+            Console.WriteLine(arg);
+        }
+
+        return 0;
+    }
 }
-
-
 

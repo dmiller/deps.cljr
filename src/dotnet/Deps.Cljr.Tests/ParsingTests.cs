@@ -1,6 +1,8 @@
 using Deps.Cljr;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Deps.Cljr.Tests;
 
@@ -14,7 +16,8 @@ public class ParsingTests
     public void HelpTests(string cli)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        Assert.IsType<HelpCommand>(Program.ParseArgs(args));
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Mode==EMode.Help);
     }
 
     [Theory]
@@ -25,53 +28,39 @@ public class ParsingTests
     public void VersionTests(string cli)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        Assert.IsType<VersionCommand>(Program.ParseArgs(args));
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Mode == EMode.Version);
     }
 
+
     [Theory]
-    [InlineData("-Sdescribe -X:A:B 12 13", CommandLineFlags.Describe)]
-    [InlineData("-Sforce -X:A:B 12 13", CommandLineFlags.Force)]
-    [InlineData("-Spath -X:A:B 12 13", CommandLineFlags.Path)]
-    [InlineData("-Spom -X:A:B 12 13", CommandLineFlags.Pom)]
-    [InlineData("-P -X:A:B 12 13", CommandLineFlags.Prep)]
-    [InlineData("-Srepro -X:A:B 12 13", CommandLineFlags.Repro)]
-    [InlineData("-Strace -X:A:B 12 13", CommandLineFlags.Trace)]
-    [InlineData("-Stree -X:A:B 12 13", CommandLineFlags.Tree)]
-    [InlineData("-Sverbose -X:A:B 12 13", CommandLineFlags.Verbose)]
-    public void FlagTests(string cli, CommandLineFlags trueFlag)
+    [InlineData("describe")]
+    [InlineData("force")]
+    [InlineData("path")]
+    [InlineData("pom")]
+    [InlineData("repro")]
+    [InlineData("trace")]
+    [InlineData("tree")]
+    [InlineData("verbose")]
+    public void SFlagTests(string flag)
     {
+        var cli = $"-S{flag} -X:A: B 12 13";
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType<ExecCommand>(cmd);
-        foreach (var flag in Enum.GetValues<CommandLineFlags>())
-        {
-            var flagSet = (cmd.CljOpts.Flags & flag);
-            if (flag == trueFlag)
-                Assert.True(flagSet == flag);
-            else
-                Assert.False(flagSet == flag);
-        }
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Flags.Count == 1);
+        Assert.Contains(flag, items.Flags);
     }
 
-    [Theory]
-    [InlineData("-Spom -X:A:B 12 13", "We are CLR")]
-    [InlineData("-Jsomething -X:A:B 12 13", "We are CLR")]
-    public void OptionsThatWarnTests(string cli, string msgPrefix) 
-    {
-        try
-        {
-            using StringWriter sw = new StringWriter();
-            Console.SetError(sw);
-            string[] args = cli.Split(new char[] { ' ' });
-            var cmd = Program.ParseArgs(args);
-            Assert.IsType<ExecCommand>(cmd);
-            Assert.StartsWith(msgPrefix, sw.ToString());
 
-        }
-        finally
-        {
-            Console.SetError(new StreamWriter(Console.OpenStandardError())); 
-        }
+    //[InlineData("-P -X:A:B 12 13", CommandLineFlags.Prep)]
+    [Fact]
+    public void PFlagTests()
+    {
+        var cli = "-P -X:A:B 12 13";
+        string[] args = cli.Split(new char[] { ' ' });
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Flags.Count == 1);
+        Assert.Contains("prep", items.Flags);
     }
 
     [Theory]
@@ -82,8 +71,9 @@ public class ParsingTests
     public void DeprecatedOptionsTests(string cli)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType<ErrorCommand>(cmd);
+        var cmd = CommandLineParser.Parse(args);
+        Assert.True(cmd.IsError);
+        Assert.NotNull(cmd.ErrorMessage);
     }
 
     [Theory]
@@ -91,14 +81,14 @@ public class ParsingTests
     [InlineData("-Srepro -Scp", "Invalid arguments")]
     [InlineData("-Srepro -Sthreads", "Invalid arguments")]
     [InlineData("-Srepro -Sthreads a", "Invalid argument")]
-    [InlineData("-Srepro -Swhat! things","Unknown command")]
+    [InlineData("-Srepro -Swhat! things","Unknown option")]
     public void MissingOrBadArgumentsToOptions(string cli, string msgPrefix)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType<ErrorCommand>(cmd);
-        var ec = (ErrorCommand) cmd;
-        Assert.StartsWith(msgPrefix, ec.Message);
+        var cmd = CommandLineParser.Parse(args);
+        Assert.True(cmd.IsError);
+        Assert.NotNull(cmd.ErrorMessage);
+        Assert.StartsWith(msgPrefix, cmd.ErrorMessage);
     }
 
     [Fact]
@@ -106,11 +96,10 @@ public class ParsingTests
     {
         string cli = "-Srepro -Sdeps ABC -Scp DEF -Sthreads 12 -X:A: B 12 13";
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType<ExecCommand>(cmd);
-        Assert.True(cmd.CljOpts.Deps.Equals("ABC"));
-        Assert.True(cmd.CljOpts.Classpaths.Equals("DEF"));
-        Assert.True(cmd.CljOpts.Threads == 12);
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Deps.Equals("ABC"));
+        Assert.True(items.ForceClasspath.Equals("DEF"));
+        Assert.True(items.Threads == 12);
     }
 
     [Fact]
@@ -118,10 +107,10 @@ public class ParsingTests
     {
         string cli = "-Srepro -A  -X:A: B 12 13";
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType<ErrorCommand>(cmd);
-        var ec = (ErrorCommand)cmd;
-        Assert.StartsWith("-A requires an alias", ec.Message);
+        var cmd = CommandLineParser.Parse(args);
+        Assert.True(cmd.IsError);
+        Assert.NotNull(cmd.ErrorMessage);
+        Assert.StartsWith("-A requires an alias", cmd.ErrorMessage);
     }
 
     [Theory]
@@ -130,22 +119,27 @@ public class ParsingTests
     public void ArgsGetPassedTests(string cli, params string[] expectedAargs)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.True(cmd.Args.Zip(expectedAargs.ToList()).All(x => x.First.Equals(x.Second)));
+        var cmd = CommandLineParser.Parse(args);
+        Assert.True(cmd.CommandArgs.Zip(expectedAargs.ToList()).All(x => x.First.Equals(x.Second)));
     }
 
     [Theory]
-    [InlineData("-Srepro -X:A:B 12 13", typeof(ExecCommand), ":A:B", "12", "13")]
-    [InlineData("-Srepro -M:A:B 12 13", typeof(MainCommand), ":A:B", "12", "13")]
-    [InlineData("-Srepro -T:A:B 12 13", typeof(ToolCommand), ":A:B", "12", "13")]
-    [InlineData("-Srepro -- 12 13", typeof(ReplCommand), null, "12", "13")]
-    public void CorrectCommandTypeCreated(string cli, Type cmdType, string cmdAliases, params string[] expectedArgs)
+    [InlineData("-Srepro -X:A:B 12 13", EMode.Exec, ":A:B", "12", "13")]
+    [InlineData("-Srepro -M:A:B 12 13", EMode.Main, ":A:B", "12", "13")]
+    [InlineData("-Srepro -T:A:B 12 13", EMode.Tool, ":A:B", "12", "13")]
+    [InlineData("-Srepro -- 12 13", EMode.Repl, null, "12", "13")]
+    [InlineData("-Srepro 12 13", EMode.Repl, null, "12", "13")]
+    public void CorrectCommandTypeCreated(string cli, EMode mode, string cmdAliases, params string[] expectedArgs)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType(cmdType, cmd);
-        Assert.True(cmd.Args.Zip(expectedArgs.ToList()).All(x => x.First.Equals(x.Second)));
-        Assert.Equal(cmdAliases, cmd.CommandAliases);
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Mode == mode);
+        Assert.True(items.CommandArgs.Zip(expectedArgs.ToList()).All(x => x.First.Equals(x.Second)));
+
+        if ( cmdAliases != null ) 
+            Assert.Equal(cmdAliases, items.CommandAliases[mode]);
+        else
+            Assert.False(items.CommandAliases.ContainsKey(mode));
     }
 
     [Fact]
@@ -153,11 +147,10 @@ public class ParsingTests
     {
         string cli = "-Srepro -T:A:B 12 13";
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType<ToolCommand>(cmd);
-        var tcmd = (ToolCommand)cmd;
-        Assert.Null(tcmd.ToolName);
-        Assert.Equal(":A:B", tcmd.CommandAliases);
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Mode == EMode.Tool);
+        Assert.Null(items.ToolName);
+        Assert.Equal(":A:B", items.CommandAliases[EMode.Tool]);
     }
 
 
@@ -166,75 +159,74 @@ public class ParsingTests
     {
         string cli = "-Srepro -Tname 12 13";
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType<ToolCommand>(cmd);
-        var tcmd = (ToolCommand)cmd;
-        Assert.Equal("name",tcmd.ToolName);
-        Assert.Null(tcmd.CommandAliases);
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Mode == EMode.Tool);
+        Assert.Equal("name", items.ToolName);
+        Assert.False(items.CommandAliases.ContainsKey(EMode.Tool));
     }
 
 
     [Theory]
-    [InlineData("-Srepro -X 12 13", typeof(ExecCommand), "12", "13")]
-    [InlineData("-Srepro -M 12 13", typeof(MainCommand), "12", "13")]
-    [InlineData("-Srepro -T 12 13", typeof(ToolCommand), "12", "13")]
-    public void CommandWithNoAliasTests(string cli, Type cmdType, params string[] expectedArgs)
+    [InlineData("-Srepro -X 12 13", EMode.Exec, "12", "13")]
+    [InlineData("-Srepro -M 12 13", EMode.Main, "12", "13")]
+    [InlineData("-Srepro -T 12 13", EMode.Tool, "12", "13")]
+    public void CommandWithNoAliasTests(string cli, EMode mode, params string[] expectedArgs)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType(cmdType, cmd);
-        Assert.Null(cmd.CommandAliases);
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Mode == mode);
+        Assert.False(items.CommandAliases.ContainsKey(mode));
     }
 
     [Theory]
-    [InlineData("-Srepro -A:A:B -A:C:D -X:A:B 12 13", typeof(ExecCommand), ":A:B", ":C:D")]
-    [InlineData("-Srepro -A:A:B -A:C:D -M:A:B 12 13", typeof(MainCommand), ":A:B", ":C:D")]
-    [InlineData("-Srepro -A:A:B -A:C:D -T:A:B 12 13", typeof(ToolCommand), ":A:B", ":C:D")]
-    [InlineData("-Srepro -A:A:B -A:C:D -- 12 13", typeof(ReplCommand), ":A:B", ":C:D")]
-    public void AArgPassesReplAliases(string cli, Type cmdType, params string[] replAliases)
+    [InlineData("-Srepro -A:A:B -A:C:D -X:A:B 12 13", EMode.Exec, ":A:B:C:D")]
+    [InlineData("-Srepro -A:A:B -A:C:D -M:A:B 12 13", EMode.Main, ":A:B:C:D")]
+    [InlineData("-Srepro -A:A:B -A:C:D -T:A:B 12 13", EMode.Tool, ":A:B:C:D")]
+    [InlineData("-Srepro -A:A:B -A:C:D -- 12 13", EMode.Repl, ":A:B:C:D")]
+    public void AArgPassesReplAliases(string cli, EMode mode, string replAliases)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType(cmdType, cmd);
-        Assert.True(cmd.CljOpts.ReplAliases.Zip(replAliases.ToList()).All(x => x.First.Equals(x.Second)));
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Mode == mode);
+        Assert.Equal(replAliases, items.CommandAliases[EMode.Repl]);
     }
 
     [Theory]
     [InlineData("-Srepro -A:A:B -A:C:D -X:")]
-    [InlineData("-Srepro -A:A:B -A:C:D  -M:")]
-    [InlineData("-Srepro -A:A:B -A:C:D  -T:")]
-    [InlineData("-Srepro -A:A:B -A:C:D  -A:")]
+    [InlineData("-Srepro -A:A:B -A:C:D -M:")]
+    [InlineData("-Srepro -A:A:B -A:C:D -T:")]
+    [InlineData("-Srepro -A:A:B -A:C:D -A:")]
     public void PowerShellWorkaroundFailTests(string cli)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType<ErrorCommand>(cmd);
+        var cmd = CommandLineParser.Parse(args);
+        Assert.True(cmd.IsError);
     }
 
     [Theory]
-    [InlineData("-Srepro -X: A:B 12 13", typeof(ExecCommand), ":A:B", "12", "13")]
-    [InlineData("-Srepro -M: A:B 12 13", typeof(MainCommand), ":A:B", "12", "13")]
-    [InlineData("-Srepro -T: A:B 12 13", typeof(ToolCommand), ":A:B", "12", "13")]
-    [InlineData("-Srepro -A: A:B -- 12 13", typeof(ReplCommand), null, "12", "13")]
-    public void PowerShellWorkaroundSuccessTests(string cli, Type cmdType, string cmdAliases, params string[] expectedArgs)
+    [InlineData("-Srepro -X: A:B 12 13", EMode.Exec, ":A:B", "12", "13")]
+    [InlineData("-Srepro -M: A:B 12 13", EMode.Main, ":A:B", "12", "13")]
+    [InlineData("-Srepro -T: A:B 12 13", EMode.Tool, ":A:B", "12", "13")]
+    [InlineData("-Srepro -A: A:B -- 12 13", EMode.Repl, ":A:B", "12", "13")]
+    public void PowerShellWorkaroundSuccessTests(string cli, EMode mode, string cmdAliases, params string[] expectedArgs)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType(cmdType, cmd);
-        Assert.True(cmd.Args.Zip(expectedArgs.ToList()).All(x => x.First.Equals(x.Second)));
-        Assert.Equal(cmdAliases, cmd.CommandAliases);
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Mode == mode);
+        Assert.True(items.CommandArgs.Zip(expectedArgs.ToList()).All(x => x.First.Equals(x.Second)));
+        Assert.Equal(cmdAliases, items.CommandAliases[mode]);
     }
 
     [Theory]
-    [InlineData("-Srepro -A: A:B -A: C:D -X:A:B 12 13", typeof(ExecCommand), ":A:B", ":C:D")]
-    [InlineData("-Srepro -A: A:B -A: C:D -M:A:B 12 13", typeof(MainCommand), ":A:B", ":C:D")]
-    [InlineData("-Srepro -A: A:B -A: C:D -T:A:B 12 13", typeof(ToolCommand), ":A:B", ":C:D")]
-    [InlineData("-Srepro -A: A:B -A: C:D -- 12 13", typeof(ReplCommand), ":A:B", ":C:D")]
-    public void PowerShellWorkaroundForASuccessTests(string cli, Type cmdType, params string[] replAliases)
+    [InlineData("-Srepro -A: A:B -A: C:D -X:A:B 12 13", EMode.Exec, ":A:B:C:D")]
+    [InlineData("-Srepro -A: A:B -A: C:D -M:A:B 12 13", EMode.Main, ":A:B:C:D")]
+    [InlineData("-Srepro -A: A:B -A: C:D -T:A:B 12 13", EMode.Tool, ":A:B:C:D")]
+    [InlineData("-Srepro -A: A:B -A: C:D -- 12 13", EMode.Repl, ":A:B:C:D")]
+    public void PowerShellWorkaroundForASuccessTests(string cli, EMode mode, string replAliases)
     {
         string[] args = cli.Split(new char[] { ' ' });
-        var cmd = Program.ParseArgs(args);
-        Assert.IsType(cmdType, cmd);
-        Assert.True(cmd.CljOpts.ReplAliases.Zip(replAliases.ToList()).All(x => x.First.Equals(x.Second)));
+        var items = CommandLineParser.Parse(args);
+        Assert.True(items.Mode == mode);
+        Assert.Equal(replAliases, items.CommandAliases[EMode.Repl]);
     }
 }

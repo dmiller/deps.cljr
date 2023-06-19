@@ -338,7 +338,7 @@ For more info, see:
                 process.StartInfo.FileName = "clojure.main";
                 process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
                 var env = process.StartInfo.EnvironmentVariables;
-                env["CLOJURE_LOAD_PATH"] = "abc";
+                env["CLOJURE_LOAD_PATH"] = "abc";    // TODO -- what is this?
                 var argList = process.StartInfo.ArgumentList;
                 argList.Add("-m");
                 argList.Add("clojure.tools.deps.script.make-classpath2");
@@ -407,29 +407,54 @@ For more info, see:
         }
         else
         {
-
             //if (Test - Path $JvmFile) {
             //    $JvmCacheOpts = @(Get - Content $JvmFile)
 
-            //        if (($Mode - eq 'exec') -or($Mode - eq 'tool')) {
-            //            & $JavaCmd - XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts "-Dclojure.basis=$BasisFile" -classpath "$CP;$InstallDir/exec.jar" clojure.main - m clojure.run.exec @ClojureArgs
-            //        } else
-            //        {
-            //            if (Test - Path $MainFile) {
-            //    # TODO this seems dangerous
-            //    $MainCacheOpts = @(Get - Content $MainFile) -replace '"', '\"'
-            //            }
-            //            if ($ClojureArgs.Count - gt 0 - and $Mode - eq 'repl') {
-            //                Write - Warning "WARNING: Implicit use of clojure.main with options is deprecated, use -M"
-            //            }
-            //            & $JavaCmd - XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts "-Dclojure.basis=$BasisFile" - classpath $CP clojure.main @MainCacheOpts @ClojureArgs
-            //}
+            if (cliArgs.HasFlag("exec") || cliArgs.HasFlag("tool"))
+            {
+                // & $JavaCmd -XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts "-Dclojure.basis=$BasisFile" -classpath "$CP;$InstallDir/exec.jar" clojure.main -m clojure.run.exec @ClojureArgs
 
+                using Process process = new();
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.FileName = "clojure.main";
+                process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
+                var env = process.StartInfo.EnvironmentVariables;
+                env["CLOJURE_LOAD_PATH"] = "abc";   // TODO -- what is this? need to get the equivalant of exec.jar on the load path
+                env["clojure.basis"] = basisFile;   // will this do -Dclojure.basis=$BasisFile  ?
+                var argList = process.StartInfo.ArgumentList;
+                argList.Add("-m");
+                argList.Add("clojure.run.exec");
+                cliArgs.CommandArgs.ForEach(arg => argList.Add(arg));
+                process.Start();
+
+            }
+            else
+            {
+                //            if (Test - Path $MainFile) {
+                //    # TODO this seems dangerous
+                //    $MainCacheOpts = @(Get - Content $MainFile) -replace '"', '\"'
+                //            }
+                var mainCacheOpts = File.Exists(mainFile) ? File.ReadAllLines(mainFile).ToList() : null;
+
+                if (cliArgs.CommandArgs.Count > 0 && cliArgs.HasFlag("repl"))
+                    Warn("WARNING: Implicit use of clojure.main with options is deprecated, use -M");
+
+                // & $JavaCmd - XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts -Dclojure.basis=$BasisFile -classpath $CP clojure.main @MainCacheOpts @ClojureArgs
+
+                using Process process = new();
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.FileName = "clojure.main";
+                process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
+                var env = process.StartInfo.EnvironmentVariables;
+                env["CLOJURE_LOAD_PATH"] = "abc";  // TODO -- what is this?
+                env["clojure.basis"] = basisFile;   // will this do -Dclojure.basis=$BasisFile  ?
+                var argList = process.StartInfo.ArgumentList;
+                if (mainCacheOpts != null)
+                    mainCacheOpts.ForEach(arg => argList.Add(arg.Replace("\"", "\\\"")));
+                cliArgs.CommandArgs.ForEach(arg => argList.Add(arg));
+                process.Start();
+            }
         }
-
-
-
-
 
         return 0;
     }

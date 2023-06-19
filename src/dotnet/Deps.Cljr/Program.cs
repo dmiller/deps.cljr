@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -202,7 +203,7 @@ For more info, see:
 
         // Chain deps.edn in config paths. repro=skip config dir
         var configProject = "deps.edn";
-        string configUser;
+        string configUser = string.Empty;
         string[] configPaths;
 
         if (cliArgs.HasFlag("repro"))
@@ -319,9 +320,50 @@ For more info, see:
                 Console.WriteLine("Refreshing classpath");
 
             // TODO: MAKE PROCESS CALL CORRESPONDING TO:
-            //  & $JavaCmd - XX:-OmitStackTraceInFastThrow @CljJvmOpts -classpath $ToolsCp clojure.main -m clojure.tools.deps.script.make-classpath2  --config-user $ConfigUser --config-project $ConfigProject --basis -file $BasisFile --cp-file $CpFile --jvm-file $JvmFile --main-file $MainFile --manifest-file $ManifestFile @ToolsArgs
+            //  & $JavaCmd - XX:-OmitStackTraceInFastThrow @CljJvmOpts -classpath $ToolsCp clojure.main -m clojure.tools.deps.script.make-classpath2
+            //         --config-user $ConfigUser
+            //         --config-project $ConfigProject
+            //         --basis-file $BasisFile
+            //         --cp-file $CpFile
+            //         --jvm-file $JvmFile
+            //         --main-file $MainFile
+            //         --manifest-file $ManifestFile @ToolsArgs
             //  if ($LastExitCode - ne 0) {
             //      return
+
+            try
+            {
+                using Process process = new();
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.FileName = "clojure.main";
+                process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
+                var env = process.StartInfo.EnvironmentVariables;
+                env["CLOJURE_LOAD_PATH"] = "abc";
+                var argList = process.StartInfo.ArgumentList;
+                argList.Add("-m");
+                argList.Add("clojure.tools.deps.script.make-classpath2");
+                argList.Add("--config-user");
+                argList.Add(configUser);
+                argList.Add("--config-project");
+                argList.Add(configProject);
+                argList.Add("--cp-file");
+                argList.Add(cpFile);
+                argList.Add("--jvm-file");
+                argList.Add(jvmFile);
+                argList.Add("--main-file");
+                argList.Add(mainFile);
+                argList.Add("--manifest-file");
+                argList.Add(manifestFile);
+                toolsArgs.ForEach(arg => argList.Add(arg));
+                process.Start();
+                if (process.ExitCode != 0)
+                    return process.ExitCode;
+            }
+            catch (Exception ex)
+            {
+                Warn($"Error creating classpath: {ex.Message}");
+                return 1;
+            }
         }
 
         var classpath =
@@ -329,7 +371,7 @@ For more info, see:
             : cliArgs.ForceClasspath
             ?? File.ReadAllText(cpFile);
 
-        if (cliArgs.HasFlag("prep")) 
+        if (cliArgs.HasFlag("prep"))
         { /* already done */ }
         else if (cliArgs.HasFlag("pom"))
         {
@@ -342,21 +384,20 @@ For more info, see:
         }
         else if (cliArgs.HasFlag("describe"))
         {
-            var pathVector = String.Join(' ',configPaths.Select(p => p.Replace("\\", "\\\\")).ToArray());
+            var pathVector = String.Join(' ', configPaths.Select(p => p.Replace("\\", "\\\\")).ToArray());
             Console.WriteLine($"{{:version {Version}");
-            // TODO: Finish this:
-             //:config - files[$PathVector]
-             //:config - user "$($ConfigUser.Replace("\","\\"))"
-             //:config - project "$($ConfigProject.Replace("\","\\"))"
-             //:install - dir "$($InstallDir.Replace("\","\\"))"
-             //:config - dir "$($ConfigDir.Replace("\","\\"))"
-             //:cache - dir "$($CacheDir.Replace("\","\\"))"
-             //:force $(if ($Force) { "true"} else { "false"})
-             //:repro $(if ($Repro) { "true"} else { "false"})
-             //:main - aliases "$main_aliases"
-             //:repl - aliases "$repl_aliases"
-             //:exec - aliases "$exec_aliases"}
-             //       "@
+            Console.WriteLine($" :config - files[{pathVector}]");
+            Console.WriteLine($" :config - user {configUser.Replace("\\", "\\\\")}");
+            Console.WriteLine($" :config - project {configProject.Replace("\\", "\\\\")}");
+            Console.WriteLine($" :install - dir {installDir.Replace("\\", "\\\\")}");
+            Console.WriteLine($" :config - dir {configDir.Replace("\\", "\\\\")}");
+            Console.WriteLine($" :cache - dir {cacheDir.Replace("\\", "\\\\")}");
+            Console.WriteLine($" :force {(cliArgs.HasFlag("force") ? "true" : "false")}");
+            Console.WriteLine($" :repro {(cliArgs.HasFlag("repro") ? "true" : "false")}");
+            Console.WriteLine($" :main - aliases {cliArgs.GetCommandAlias(EMode.Main)}");
+            Console.WriteLine($" :main - aliases {cliArgs.GetCommandAlias(EMode.Repl)}");
+            Console.WriteLine($" :main - aliases {cliArgs.GetCommandAlias(EMode.Exec)}");
+            Console.WriteLine("}");
         }
         else if (cliArgs.HasFlag("tree"))
         { /* already done */ }
@@ -371,7 +412,7 @@ For more info, see:
             //    $JvmCacheOpts = @(Get - Content $JvmFile)
 
             //        if (($Mode - eq 'exec') -or($Mode - eq 'tool')) {
-            //            & $JavaCmd - XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts "-Dclojure.basis=$BasisFile" - classpath "$CP;$InstallDir/exec.jar" clojure.main - m clojure.run.exec @ClojureArgs
+            //            & $JavaCmd - XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts "-Dclojure.basis=$BasisFile" -classpath "$CP;$InstallDir/exec.jar" clojure.main - m clojure.run.exec @ClojureArgs
             //        } else
             //        {
             //            if (Test - Path $MainFile) {

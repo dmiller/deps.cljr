@@ -243,7 +243,7 @@ For more info, see:
             Console.WriteLine($"version      = {Version}");
             Console.WriteLine($"install_dir  = {installDir}");
             Console.WriteLine($"config_dir   = {configDir}");
-            Console.WriteLine($"config_paths = {configPaths}");
+            Console.WriteLine($"config_paths = {String.Join(' ',configPaths)}");
             Console.WriteLine($"cache_dir    = {cacheDir}");
             Console.WriteLine($"cp_file      = {cpFile}");
             Console.WriteLine();
@@ -335,11 +335,12 @@ For more info, see:
             {
                 using Process process = new();
                 process.StartInfo.UseShellExecute = false;
-                process.StartInfo.FileName = "clojure.main";
+                process.StartInfo.FileName = "powershell.exe";
                 process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
                 var env = process.StartInfo.EnvironmentVariables;
                 env["CLOJURE_LOAD_PATH"] = "abc";    // TODO -- what is this?
                 var argList = process.StartInfo.ArgumentList;
+                argList.Add(Path.Join(installDir,"run-clojure-main.ps1"));
                 argList.Add("-m");
                 argList.Add("clojure.tools.deps.script.make-classpath2");
                 argList.Add("--config-user");
@@ -353,9 +354,10 @@ For more info, see:
                 argList.Add("--main-file");
                 argList.Add(mainFile);
                 argList.Add("--manifest-file");
-                argList.Add(manifestFile);
+                argList.Add(manifestFile); 
                 toolsArgs.ForEach(arg => argList.Add(arg));
                 process.Start();
+                process.WaitForExit();
                 if (process.ExitCode != 0)
                     return process.ExitCode;
             }

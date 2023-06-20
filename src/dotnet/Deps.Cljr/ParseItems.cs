@@ -51,7 +51,7 @@ public class ParseItems
 
     public bool TryGetCommandAlias(EMode mode, out string alias)
     {
-        return CommandAliases.TryGetValue(mode, out alias);
+        return CommandAliases.TryGetValue(mode, value: out alias);
     }
 
 

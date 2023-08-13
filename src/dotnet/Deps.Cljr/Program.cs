@@ -356,6 +356,11 @@ For more info, see:
                 argList.Add("--manifest-file");
                 argList.Add(manifestFile); 
                 toolsArgs.ForEach(arg => argList.Add(arg));
+
+                Console.WriteLine($"Classpath: toolsArg =  {string.Join(' ', toolsArgs)}");
+                Console.WriteLine($"Classpath: argList = {string.Join(' ', argList)}");
+
+
                 process.Start();
                 process.WaitForExit();
                 if (process.ExitCode != 0)

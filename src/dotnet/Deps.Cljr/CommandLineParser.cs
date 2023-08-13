@@ -58,7 +58,7 @@ public static class CommandLineParser
                 return items;
             }
 
-            if (arg == "-h" || arg == "--help")
+            if (arg == "-h" || arg == "--help" || arg == "-?")
             {
                 items.Mode = EMode.Help;
                 return items;

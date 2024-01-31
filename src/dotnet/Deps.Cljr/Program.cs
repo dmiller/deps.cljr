@@ -252,7 +252,7 @@ For more info, see:
         // check for stale classpath
         var stale = false;
 
-        if (cliArgs.HasFlag("force") || cliArgs.HasFlag("trace") || cliArgs.HasFlag("tree") || cliArgs.HasFlag("prep") || !Directory.Exists(cpFile))
+        if (cliArgs.HasFlag("force") || cliArgs.HasFlag("trace") || cliArgs.HasFlag("tree") || cliArgs.HasFlag("prep") || !File.Exists(cpFile))
             stale = true;
         else if (cliArgs.ToolName is not null && IsNewerFile(Path.Join(configDir, "tools", $"{cliArgs.ToolName}.edn"), cpFile))
             stale = true;
@@ -331,6 +331,9 @@ For more info, see:
             //  if ($LastExitCode - ne 0) {
             //      return
 
+            var fp = System.IO.Path.GetFullPath(".");
+            var b = System.IO.File.Exists(configProject);
+
             try
             {
                 using Process process = new();
@@ -338,7 +341,7 @@ For more info, see:
                 process.StartInfo.FileName = "powershell.exe";
                 process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
                 var env = process.StartInfo.EnvironmentVariables;
-                env["CLOJURE_LOAD_PATH"] = "abc";    // TODO -- what is this?
+                env["CLOJURE_LOAD_PATH"] = installDir;    // TODO -- what is this?
                 var argList = process.StartInfo.ArgumentList;
                 argList.Add(Path.Join(installDir,"run-clojure-main.ps1"));
                 argList.Add("-m");
@@ -347,6 +350,8 @@ For more info, see:
                 argList.Add(configUser);
                 argList.Add("--config-project");
                 argList.Add(configProject);
+                argList.Add("--basis-file");
+                argList.Add(basisFile);
                 argList.Add("--cp-file");
                 argList.Add(cpFile);
                 argList.Add("--jvm-file");
@@ -417,22 +422,24 @@ For more info, see:
             //if (Test - Path $JvmFile) {
             //    $JvmCacheOpts = @(Get - Content $JvmFile)
 
-            if (cliArgs.HasFlag("exec") || cliArgs.HasFlag("tool"))
+            if (cliArgs.Mode == EMode.Exec || cliArgs.Mode == EMode.Tool)
             {
                 // & $JavaCmd -XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts "-Dclojure.basis=$BasisFile" -classpath "$CP;$InstallDir/exec.jar" clojure.main -m clojure.run.exec @ClojureArgs
 
                 using Process process = new();
                 process.StartInfo.UseShellExecute = false;
-                process.StartInfo.FileName = "clojure.main";
+                process.StartInfo.FileName = "powershell.exe";
                 process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
                 var env = process.StartInfo.EnvironmentVariables;
-                env["CLOJURE_LOAD_PATH"] = "abc";   // TODO -- what is this? need to get the equivalant of exec.jar on the load path
+                env["CLOJURE_LOAD_PATH"] = classpath + Path.PathSeparator + installDir;   // TODO -- what is this? need to get the equivalant of exec.jar on the load path
                 env["clojure.basis"] = basisFile;   // will this do -Dclojure.basis=$BasisFile  ?
                 var argList = process.StartInfo.ArgumentList;
+                argList.Add(Path.Join(installDir, "run-clojure-main.ps1"));
                 argList.Add("-m");
                 argList.Add("clojure.run.exec");
                 cliArgs.CommandArgs.ForEach(arg => argList.Add(arg));
                 process.Start();
+                process.WaitForExit();
 
             }
             else
@@ -448,18 +455,36 @@ For more info, see:
 
                 // & $JavaCmd - XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts -Dclojure.basis=$BasisFile -classpath $CP clojure.main @MainCacheOpts @ClojureArgs
 
+
+                //using Process process = new();
+                //process.StartInfo.UseShellExecute = false;
+                //process.StartInfo.FileName = "powershell.exe";
+                //process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
+                //process.StartInfo.WorkingDirectory = Environment.CurrentDirectory;
+                //var env = process.StartInfo.EnvironmentVariables;
+                //env["CLOJURE_LOAD_PATH"] = classpath;  // TODO -- what is this?
+                //env["clojure.basis"] = basisFile;   // will this do -Dclojure.basis=$BasisFile  ?
+                //var argList = process.StartInfo.ArgumentList;
+                //argList.Add(Path.Join(installDir, "run-clojure-main.ps1"));
+                //argList.Add("-e");
+                //argList.Add("\'(println 12)(load \\\"hello\\\")(println (hello/run))\'");
+                //process.Start();
+                //process.WaitForExit();
+
                 using Process process = new();
                 process.StartInfo.UseShellExecute = false;
-                process.StartInfo.FileName = "clojure.main";
+                process.StartInfo.FileName = "powershell.exe";
                 process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
+                process.StartInfo.WorkingDirectory = Environment.CurrentDirectory;
                 var env = process.StartInfo.EnvironmentVariables;
-                env["CLOJURE_LOAD_PATH"] = "abc";  // TODO -- what is this?
+                env["CLOJURE_LOAD_PATH"] = classpath;  // TODO -- what is this?
                 env["clojure.basis"] = basisFile;   // will this do -Dclojure.basis=$BasisFile  ?
                 var argList = process.StartInfo.ArgumentList;
-                if (mainCacheOpts != null)
-                    mainCacheOpts.ForEach(arg => argList.Add(arg.Replace("\"", "\\\"")));
+                argList.Add(Path.Join(installDir, "run-clojure-main.ps1"));
+                mainCacheOpts?.ForEach(arg => argList.Add(arg.Replace("\"", "\\\"")));
                 cliArgs.CommandArgs.ForEach(arg => argList.Add(arg));
                 process.Start();
+                process.WaitForExit();
             }
         }
 

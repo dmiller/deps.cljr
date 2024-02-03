@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Deps.Cljr;
+﻿namespace Deps.Cljr;
 
 public enum EMode { Version, Help, Repl, Tool, Exec, Main }
 
 public class ParseItems
 {
     readonly HashSet<string> Flags = new();
-    public string? Deps { get; set; } =null;
+    public string? Deps { get; set; } = null;
     public string? ForceClasspath { get; set; } = null;
     public int Threads { get; set; } = 0;
     public string? ToolName { get; set; } = null;
@@ -20,12 +14,12 @@ public class ParseItems
     public EMode Mode { get; set; } = EMode.Repl;
     public bool IsError { get; set; } = false;
     public string? ErrorMessage { get; set; } = null;
-    public Dictionary<EMode,string> CommandAliases { get; } = new();
+    public Dictionary<EMode, string> CommandAliases { get; } = new();
 
     public ParseItems SetError(string message)
     {
         IsError = true;
-        ErrorMessage= message;
+        ErrorMessage = message;
         return this;
     }
 
@@ -37,7 +31,7 @@ public class ParseItems
 
     public void SetCommandAliases(EMode mode, string? alias)
     {
-        if ( alias is  not null)
+        if (alias is not null)
             CommandAliases[mode] = alias;
     }
 

@@ -1,11 +1,6 @@
-﻿using System.ComponentModel;
-using System.ComponentModel.Design;
-using System.Diagnostics;
-using System.Reflection;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Text.Unicode;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Deps.Cljr;
 
@@ -111,11 +106,11 @@ For more info, see:
 
     static void Warn(string message) => Console.Error.WriteLine(message);
 
-    static void EndExecution(int exitCode, string message)
-    {
-        Warn(message);
-        EndExecution(exitCode);
-    }
+    //static void EndExecution(int exitCode, string message)
+    //{
+    //    Warn(message);
+    //    EndExecution(exitCode);
+    //}
 
     static void EndExecution(int exitCode) => Environment.Exit(exitCode);
 
@@ -172,7 +167,7 @@ For more info, see:
 
         // Determine user config directory; if it does not exist, create it
         var configDir = Environment.GetEnvironmentVariable("CLJ_CONFIG")
-            ?? Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".clojure");
+            ?? Path.Join(HomeDir, ".clojure");
         if (!Directory.Exists(configDir))
             Directory.CreateDirectory(configDir);
 
@@ -243,7 +238,7 @@ For more info, see:
             Console.WriteLine($"version      = {Version}");
             Console.WriteLine($"install_dir  = {installDir}");
             Console.WriteLine($"config_dir   = {configDir}");
-            Console.WriteLine($"config_paths = {String.Join(' ',configPaths)}");
+            Console.WriteLine($"config_paths = {String.Join(' ', configPaths)}");
             Console.WriteLine($"cache_dir    = {cacheDir}");
             Console.WriteLine($"cp_file      = {cpFile}");
             Console.WriteLine();
@@ -278,10 +273,10 @@ For more info, see:
             if (cliArgs.TryGetCommandAlias(EMode.Main, out var alias))
                 toolsArgs.Add($"-M{alias}");
 
-            if (cliArgs.TryGetCommandAlias(EMode.Repl, out  alias))
+            if (cliArgs.TryGetCommandAlias(EMode.Repl, out alias))
                 toolsArgs.Add($"-A{alias}");
 
-            if (cliArgs.TryGetCommandAlias(EMode.Exec, out  alias))
+            if (cliArgs.TryGetCommandAlias(EMode.Exec, out alias))
                 toolsArgs.Add($"-X{alias}");
 
             if (cliArgs.Mode == EMode.Tool)
@@ -312,11 +307,11 @@ For more info, see:
                 toolsArgs.Add("--tree");
         }
 
-        
+
         // If stale, run make-classpath to refresh cached classpath
-        if ( stale && !cliArgs.HasFlag("describe"))
+        if (stale && !cliArgs.HasFlag("describe"))
         {
-            if (cliArgs.HasFlag("verbose"))  
+            if (cliArgs.HasFlag("verbose"))
                 Console.WriteLine("Refreshing classpath");
 
             // TODO: MAKE PROCESS CALL CORRESPONDING TO:
@@ -343,7 +338,7 @@ For more info, see:
                 var env = process.StartInfo.EnvironmentVariables;
                 env["CLOJURE_LOAD_PATH"] = installDir;    // TODO -- what is this?
                 var argList = process.StartInfo.ArgumentList;
-                argList.Add(Path.Join(installDir,"run-clojure-main.ps1"));
+                argList.Add(Path.Join(installDir, "run-clojure-main.ps1"));
                 argList.Add("-m");
                 argList.Add("clojure.tools.deps.script.make-classpath2");
                 argList.Add("--config-user");
@@ -359,7 +354,7 @@ For more info, see:
                 argList.Add("--main-file");
                 argList.Add(mainFile);
                 argList.Add("--manifest-file");
-                argList.Add(manifestFile); 
+                argList.Add(manifestFile);
                 toolsArgs.ForEach(arg => argList.Add(arg));
 
                 Console.WriteLine($"Classpath: toolsArg =  {string.Join(' ', toolsArgs)}");

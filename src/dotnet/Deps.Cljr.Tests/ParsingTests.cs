@@ -1,9 +1,3 @@
-using Deps.Cljr;
-using System.Globalization;
-using System.Runtime.CompilerServices;
-using Xunit;
-using Xunit.Abstractions;
-
 namespace Deps.Cljr.Tests;
 
 public class ParsingTests
@@ -17,7 +11,7 @@ public class ParsingTests
     {
         string[] args = cli.Split(new char[] { ' ' });
         var items = CommandLineParser.Parse(args);
-        Assert.True(items.Mode==EMode.Help);
+        Assert.True(items.Mode == EMode.Help);
     }
 
     [Theory]
@@ -81,7 +75,7 @@ public class ParsingTests
     [InlineData("-Srepro -Scp", "Invalid arguments")]
     [InlineData("-Srepro -Sthreads", "Invalid arguments")]
     [InlineData("-Srepro -Sthreads a", "Invalid argument")]
-    [InlineData("-Srepro -Swhat! things","Unknown option")]
+    [InlineData("-Srepro -Swhat! things", "Unknown option")]
     public void MissingOrBadArgumentsToOptions(string cli, string msgPrefix)
     {
         string[] args = cli.Split(new char[] { ' ' });
@@ -114,7 +108,7 @@ public class ParsingTests
     }
 
     [Theory]
-    [InlineData("-Srepro -X:A: B 12 13","B","12","13")]
+    [InlineData("-Srepro -X:A: B 12 13", "B", "12", "13")]
     [InlineData("-Srepro -- B 12 13", "B", "12", "13")]
     public void ArgsGetPassedTests(string cli, params string[] expectedAargs)
     {
@@ -136,7 +130,7 @@ public class ParsingTests
         Assert.True(items.Mode == mode);
         Assert.True(items.CommandArgs.Zip(expectedArgs.ToList()).All(x => x.First.Equals(x.Second)));
 
-        if ( cmdAliases != null ) 
+        if (cmdAliases != null)
             Assert.Equal(cmdAliases, items.CommandAliases[mode]);
         else
             Assert.False(items.CommandAliases.ContainsKey(mode));

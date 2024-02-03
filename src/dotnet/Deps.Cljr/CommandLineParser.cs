@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Deps.Cljr;
+﻿namespace Deps.Cljr;
 
 
 
@@ -79,7 +72,7 @@ public static class CommandLineParser
             if (arg.StartsWith("-S"))
             {
                 var flag = ExtractAlias(arg);
-                switch ( flag )
+                switch (flag)
                 {
                     case "pom":
                     case "path":
@@ -133,7 +126,7 @@ public static class CommandLineParser
             if (arg.StartsWith("-M"))
             {
                 items.Mode = EMode.Main;
-                items.SetCommandAliases(EMode.Main,NonBlank(ExtractAlias(arg)));
+                items.SetCommandAliases(EMode.Main, NonBlank(ExtractAlias(arg)));
                 items.CommandArgs = GetArgs(i, args);
                 return items;
             }

@@ -118,8 +118,16 @@
 
 (defn- read-basis
  []
+
+ (println "read-basis: clojure.basis:" (Environment/GetEnvironmentVariable "clojure.basis"))
+ (let [fi (cio/file-info (Environment/GetEnvironmentVariable "clojure.basis"))]
+   (println "read-basis: fi:" (.FullName fi))
+   (println "read-basis: exists:" (.Exists fi)))
+
  (when-let [f #?(:clj (jio/file (System/getProperty "clojure.basis"))
                  :cljr (cio/file-info (Environment/GetEnvironmentVariable "clojure.basis")))]
+
+
    (if (and f (#?(:clj .exists :cljr .Exists) f))
      (->> f slurp (edn/read-string {:default tagged-literal}))
      (throw (err "No basis declared in clojure.basis system property")))))
@@ -223,6 +231,18 @@
           {:keys [function overrides trailing]} (-> args read-args parse-fn)
           {:keys [exec-fn exec-args ns-aliases ns-default]} execute-args
           f (or function exec-fn)]
+
+      (println "main: args:" args)
+      (println "main: execute-args:" execute-args)
+      (println "main: function:" function)
+      (println "main: overrides:" overrides)
+      (println "main: trailing:" trailing)
+      (println "main: exec-fn:" exec-fn)
+	  (println "main: exec-args:" exec-args)
+      (println "main: ns-aliases:" ns-aliases)
+      (println "main: ns-default:" ns-default)
+      (println "main: f: " f)
+
       (when (nil? f)
         (if (symbol? (first overrides))
           (throw (err "Key is missing value:" (last overrides)))

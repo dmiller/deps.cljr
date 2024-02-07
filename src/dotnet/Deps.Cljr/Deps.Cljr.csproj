@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <None Remove="clojure\run\exec.cljc" />
+    <None Remove="deps.edn" />
     <None Remove="example-deps.edn" />
     <None Remove="run-clojure-main.ps1" />
     <None Remove="tools.edn" />
@@ -16,6 +17,9 @@
 
   <ItemGroup>
     <Content Include="clojure\run\exec.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\deps.edn">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="example-deps.edn">

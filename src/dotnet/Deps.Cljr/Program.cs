@@ -112,7 +112,7 @@ For more info, see:
     //    EndExecution(exitCode);
     //}
 
-    static void EndExecution(int exitCode) => Environment.Exit(exitCode);
+    //static void EndExecution(int exitCode) => Environment.Exit(exitCode);
 
     static readonly string Version = typeof(Program).Assembly.GetName().Version!.ToString();
 
@@ -326,9 +326,6 @@ For more info, see:
             //  if ($LastExitCode - ne 0) {
             //      return
 
-            var fp = System.IO.Path.GetFullPath(".");
-            var b = System.IO.File.Exists(configProject);
-
             try
             {
                 using Process process = new();
@@ -336,11 +333,13 @@ For more info, see:
                 process.StartInfo.FileName = "powershell.exe";
                 process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
                 var env = process.StartInfo.EnvironmentVariables;
-                env["CLOJURE_LOAD_PATH"] = installDir;    // TODO -- what is this?
+                env["CLOJURE_LOAD_PATH"] = installDir;
                 var argList = process.StartInfo.ArgumentList;
                 argList.Add(Path.Join(installDir, "run-clojure-main.ps1"));
                 argList.Add("-m");
                 argList.Add("clojure.tools.deps.script.make-classpath2");
+                argList.Add("--install-dir");
+                argList.Add(installDir.Replace("\\", "\\\\"));
                 argList.Add("--config-user");
                 argList.Add(configUser);
                 argList.Add("--config-project");
@@ -355,7 +354,7 @@ For more info, see:
                 argList.Add(mainFile);
                 argList.Add("--manifest-file");
                 argList.Add(manifestFile);
-                toolsArgs.ForEach(arg => argList.Add(arg));
+                toolsArgs.ForEach(arg => argList.Add("\"" + arg + "\"")); // incredible hack to get around dealing with what the powershell parser does to args with a : in them
 
                 Console.WriteLine($"Classpath: toolsArg =  {string.Join(' ', toolsArgs)}");
                 Console.WriteLine($"Classpath: argList = {string.Join(' ', argList)}");
@@ -393,17 +392,17 @@ For more info, see:
         {
             var pathVector = String.Join(' ', configPaths.Select(p => p.Replace("\\", "\\\\")).ToArray());
             Console.WriteLine($"{{:version {Version}");
-            Console.WriteLine($" :config - files[{pathVector}]");
-            Console.WriteLine($" :config - user {configUser.Replace("\\", "\\\\")}");
-            Console.WriteLine($" :config - project {configProject.Replace("\\", "\\\\")}");
-            Console.WriteLine($" :install - dir {installDir.Replace("\\", "\\\\")}");
-            Console.WriteLine($" :config - dir {configDir.Replace("\\", "\\\\")}");
-            Console.WriteLine($" :cache - dir {cacheDir.Replace("\\", "\\\\")}");
+            Console.WriteLine($" :config-files [{pathVector}]");
+            Console.WriteLine($" :config-user {configUser.Replace("\\", "\\\\")}");
+            Console.WriteLine($" :config-project {configProject.Replace("\\", "\\\\")}");
+            Console.WriteLine($" :install-dir {installDir.Replace("\\", "\\\\")}");
+            Console.WriteLine($" :config-dir {configDir.Replace("\\", "\\\\")}");
+            Console.WriteLine($" :cache-dir {cacheDir.Replace("\\", "\\\\")}");
             Console.WriteLine($" :force {(cliArgs.HasFlag("force") ? "true" : "false")}");
             Console.WriteLine($" :repro {(cliArgs.HasFlag("repro") ? "true" : "false")}");
             Console.WriteLine($" :main - aliases {cliArgs.GetCommandAlias(EMode.Main)}");
-            Console.WriteLine($" :main - aliases {cliArgs.GetCommandAlias(EMode.Repl)}");
-            Console.WriteLine($" :main - aliases {cliArgs.GetCommandAlias(EMode.Exec)}");
+            Console.WriteLine($" :repl - aliases {cliArgs.GetCommandAlias(EMode.Repl)}");
+            Console.WriteLine($" :exec - aliases {cliArgs.GetCommandAlias(EMode.Exec)}");
             Console.WriteLine("}");
         }
         else if (cliArgs.HasFlag("tree"))

@@ -2,7 +2,7 @@
   "profiles": {
     "Deps.Cljr": {
       "commandName": "Project",
-      "commandLineArgs": "-Sforce -X hello/test1\r\n",
+      "commandLineArgs": "-Sforce -X hello/run",
       "workingDirectory": "C:\\work\\clojure\\deps.cljr\\src\\dotnet\\Deps.Cljr\\bin\\Debug\\net6.0\\hello-world\\"
     }
   }

@@ -1,11 +1,6 @@
 
-C:\work\clojure\deps.cljr>fc C:\work\clojure\deps.cljr\src\dotnet\Deps.Cljr\bin\Debug\net6.0\clojure\tools\cli.cljc                           C:\work\clojure\tools.cli\src\main\clojure\clojure\tools\cli.cljc 
-Comparing files C:\WORK\CLOJURE\DEPS.CLJR\SRC\DOTNET\DEPS.CLJR\BIN\DEBUG\NET6.0\CLOJURE\TOOLS\cli.cljc and C:\WORK\CLOJURE\TOOLS.CLI\SRC\MAIN\CLOJURE\CLOJURE\TOOLS\CLI.CLJC
-FC: no differences encountered
-
-
-C:\work\clojure\deps.cljr>fc C:\work\clojure\deps.cljr\src\dotnet\Deps.Cljr\bin\Debug\net6.0\clojure\tools\deps.cljc                           C:\work\clojure\clr.tools.deps\src\main\clojure\clojure\tools\deps.cljc                        
-Comparing files C:\WORK\CLOJURE\DEPS.CLJR\SRC\DOTNET\DEPS.CLJR\BIN\DEBUG\NET6.0\CLOJURE\TOOLS\deps.cljc and C:\WORK\CLOJURE\CLR.TOOLS.DEPS\SRC\MAIN\CLOJURE\CLOJURE\TOOLS\DEPS.CLJC
+C:\work\clojure\deps.cljr>fc C:\work\clojure\deps.cljr\src\dotnet\Deps.Cljr\bin\Debug\net6.0\clojure\tools\gitlibs.cljc                       C:\work\clojure\clr.tools.gitlibs\src\main\clojure\clojure\tools\gitlibs.cljc 
+Comparing files C:\WORK\CLOJURE\DEPS.CLJR\SRC\DOTNET\DEPS.CLJR\BIN\DEBUG\NET6.0\CLOJURE\TOOLS\gitlibs.cljc and C:\WORK\CLOJURE\CLR.TOOLS.GITLIBS\SRC\MAIN\CLOJURE\CLOJURE\TOOLS\GITLIBS.CLJC
 FC: no differences encountered
 
 
@@ -16,6 +11,11 @@ FC: no differences encountered
 
 C:\work\clojure\deps.cljr>fc C:\work\clojure\deps.cljr\src\dotnet\Deps.Cljr\bin\Debug\net6.0\clojure\tools\gitlibs\impl.cljr                  C:\work\clojure\clr.tools.gitlibs\src\main\clojure\clojure\tools\gitlibs\impl.cljr 
 Comparing files C:\WORK\CLOJURE\DEPS.CLJR\SRC\DOTNET\DEPS.CLJR\BIN\DEBUG\NET6.0\CLOJURE\TOOLS\GITLIBS\impl.cljr and C:\WORK\CLOJURE\CLR.TOOLS.GITLIBS\SRC\MAIN\CLOJURE\CLOJURE\TOOLS\GITLIBS\IMPL.CLJR
+FC: no differences encountered
+
+
+C:\work\clojure\deps.cljr>fc C:\work\clojure\deps.cljr\src\dotnet\Deps.Cljr\bin\Debug\net6.0\clojure\tools\deps.cljc                          C:\work\clojure\clr.tools.deps\src\main\clojure\clojure\tools\deps.cljc 
+Comparing files C:\WORK\CLOJURE\DEPS.CLJR\SRC\DOTNET\DEPS.CLJR\BIN\DEBUG\NET6.0\CLOJURE\TOOLS\deps.cljc and C:\WORK\CLOJURE\CLR.TOOLS.DEPS\SRC\MAIN\CLOJURE\CLOJURE\TOOLS\DEPS.CLJC
 FC: no differences encountered
 
 
@@ -91,6 +91,11 @@ FC: no differences encountered
 
 C:\work\clojure\deps.cljr>fc C:\work\clojure\deps.cljr\src\dotnet\Deps.Cljr\bin\Debug\net6.0\clojure\tools\deps\extensions\local.cljc         C:\work\clojure\clr.tools.deps\src\main\clojure\clojure\tools\deps\extensions\local.cljc 
 Comparing files C:\WORK\CLOJURE\DEPS.CLJR\SRC\DOTNET\DEPS.CLJR\BIN\DEBUG\NET6.0\CLOJURE\TOOLS\DEPS\EXTENSIONS\local.cljc and C:\WORK\CLOJURE\CLR.TOOLS.DEPS\SRC\MAIN\CLOJURE\CLOJURE\TOOLS\DEPS\EXTENSIONS\LOCAL.CLJC
+FC: no differences encountered
+
+
+C:\work\clojure\deps.cljr>fc C:\work\clojure\deps.cljr\src\dotnet\Deps.Cljr\bin\Debug\net6.0\clojure\tools\cli.cljc                           C:\work\clojure\tools.cli\src\main\clojure\clojure\tools\cli.cljc 
+Comparing files C:\WORK\CLOJURE\DEPS.CLJR\SRC\DOTNET\DEPS.CLJR\BIN\DEBUG\NET6.0\CLOJURE\TOOLS\cli.cljc and C:\WORK\CLOJURE\TOOLS.CLI\SRC\MAIN\CLOJURE\CLOJURE\TOOLS\CLI.CLJC
 FC: no differences encountered
 
 

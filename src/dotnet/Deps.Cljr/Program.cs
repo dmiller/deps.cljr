@@ -335,7 +335,7 @@ For more info, see:
                 var env = process.StartInfo.EnvironmentVariables;
                 env["CLOJURE_LOAD_PATH"] = installDir;
                 var argList = process.StartInfo.ArgumentList;
-                argList.Add(Path.Join(installDir, "run-clojure-main.ps1"));
+                argList.Add(Path.Join(installDir, Path.Join("tools","run-clojure-main.ps1")));
                 argList.Add("-m");
                 argList.Add("clojure.tools.deps.script.make-classpath2");
                 argList.Add("--install-dir");
@@ -356,9 +356,8 @@ For more info, see:
                 argList.Add(manifestFile);
                 toolsArgs.ForEach(arg => argList.Add("\"" + arg + "\"")); // incredible hack to get around dealing with what the powershell parser does to args with a : in them
 
-                Console.WriteLine($"Classpath: toolsArg =  {string.Join(' ', toolsArgs)}");
-                Console.WriteLine($"Classpath: argList = {string.Join(' ', argList)}");
-
+                //Console.WriteLine($"Classpath: toolsArg =  {string.Join(' ', toolsArgs)}");
+                //Console.WriteLine($"Classpath: argList = {string.Join(' ', argList)}");
 
                 process.Start();
                 process.WaitForExit();
@@ -426,9 +425,9 @@ For more info, see:
                 process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
                 var env = process.StartInfo.EnvironmentVariables;
                 env["CLOJURE_LOAD_PATH"] = classpath + Path.PathSeparator + installDir;   // TODO -- what is this? need to get the equivalant of exec.jar on the load path
-                env["clojure.basis"] = basisFile;   // will this do -Dclojure.basis=$BasisFile  ?
+                 env["clojure.basis"] = basisFile;   // will this do -Dclojure.basis=$BasisFile  ?
                 var argList = process.StartInfo.ArgumentList;
-                argList.Add(Path.Join(installDir, "run-clojure-main.ps1"));
+                argList.Add(Path.Join(installDir, Path.Join("tools", "run-clojure-main.ps1")));
                 argList.Add("-m");
                 argList.Add("clojure.run.exec");
                 cliArgs.CommandArgs.ForEach(arg => argList.Add(arg));
@@ -459,7 +458,7 @@ For more info, see:
                 //env["CLOJURE_LOAD_PATH"] = classpath;  // TODO -- what is this?
                 //env["clojure.basis"] = basisFile;   // will this do -Dclojure.basis=$BasisFile  ?
                 //var argList = process.StartInfo.ArgumentList;
-                //argList.Add(Path.Join(installDir, "run-clojure-main.ps1"));
+                //argList.Add(Path.Join(installDir, Path.Join("tools", "run-clojure-main.ps1")));
                 //argList.Add("-e");
                 //argList.Add("\'(println 12)(load \\\"hello\\\")(println (hello/run))\'");
                 //process.Start();
@@ -474,7 +473,7 @@ For more info, see:
                 env["CLOJURE_LOAD_PATH"] = classpath;  // TODO -- what is this?
                 env["clojure.basis"] = basisFile;   // will this do -Dclojure.basis=$BasisFile  ?
                 var argList = process.StartInfo.ArgumentList;
-                argList.Add(Path.Join(installDir, "run-clojure-main.ps1"));
+                argList.Add(Path.Join(installDir, Path.Join("tools", "run-clojure-main.ps1")));
                 mainCacheOpts?.ForEach(arg => argList.Add(arg.Replace("\"", "\\\"")));
                 cliArgs.CommandArgs.ForEach(arg => argList.Add(arg));
                 process.Start();

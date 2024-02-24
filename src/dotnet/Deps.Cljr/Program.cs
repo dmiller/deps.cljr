@@ -356,8 +356,9 @@ For more info, see:
                 argList.Add(manifestFile);
                 toolsArgs.ForEach(arg => argList.Add("\"" + arg + "\"")); // incredible hack to get around dealing with what the powershell parser does to args with a : in them
 
-                //Console.WriteLine($"Classpath: toolsArg =  {string.Join(' ', toolsArgs)}");
-                //Console.WriteLine($"Classpath: argList = {string.Join(' ', argList)}");
+                Console.WriteLine($"Classpath: toolsArg =  {string.Join(' ', toolsArgs)}");
+                Console.WriteLine($"Classpath: argList = {string.Join(' ', argList)}");
+                Console.WriteLine($"Classpath: installdir = {installDir}");
 
                 process.Start();
                 process.WaitForExit();
@@ -419,6 +420,9 @@ For more info, see:
             {
                 // & $JavaCmd -XX:-OmitStackTraceInFastThrow @JavaOpts @JvmCacheOpts @JvmOpts "-Dclojure.basis=$BasisFile" -classpath "$CP;$InstallDir/exec.jar" clojure.main -m clojure.run.exec @ClojureArgs
 
+                Console.WriteLine("Starting exec/tool");
+
+
                 using Process process = new();
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.FileName = "powershell.exe";
@@ -463,6 +467,8 @@ For more info, see:
                 //argList.Add("\'(println 12)(load \\\"hello\\\")(println (hello/run))\'");
                 //process.Start();
                 //process.WaitForExit();
+
+                Console.WriteLine("Starting main");
 
                 using Process process = new();
                 process.StartInfo.UseShellExecute = false;

@@ -48,7 +48,7 @@
     (when debug
       (apply printerrln command-args))
     (let [proc-builder
-	     (doto (ProcessStartInfo. command (clojure.string/join " " args))                                  ;;; (ProcessBuilder. ^java.util.List command-args)
+	     (doto (ProcessStartInfo. ^String command ^String (clojure.string/join " " args))                  ;;; (ProcessBuilder. ^java.util.List command-args)
             (.set_RedirectStandardError true)
 			(.set_RedirectStandardOutput true))
                                                                                                            ;;; (.redirectError proc-builder ProcessBuilder$Redirect/INHERIT)

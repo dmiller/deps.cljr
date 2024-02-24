@@ -21,11 +21,15 @@ The Clojure tools will configure the JVM process by defining a classpath
 (of desired libraries), an execution environment(JVM options) and
 specifying a main class and args.
 
-
-Using a deps.edn file(or files), you tell Clojure where your source code
+Using a deps.edn file (or files), you tell Clojure where your source code
 resides and what libraries you need.Clojure will then calculate the full
 set of required libraries and a classpath, caching expensive parts of this
 process for better performance.
+
+Note: For projects intended for both Clojure and ClojureCLR, it might be 
+necessary to supply a different deps.edn file for each platform.  The 
+ClojureCLR version of the file should be named deps-clr.edn.  When running 
+ClojureCLR, the deps-clr.edn in preference to deps.edn should both exist.
 
 The internal steps of the Clojure tools, as well as the Clojure functions
 you intend to run, are parameterized by data structures, often maps.Shell
@@ -172,7 +176,7 @@ For more info, see:
             Directory.CreateDirectory(configDir);
 
         // Copy in example deps.edn if no deps.edn in the configDir
-        if (!File.Exists(Path.Join(configDir, "deps.edn")))
+        if (!File.Exists(Path.Join(configDir,"deps-clr.edn")) && !File.Exists(Path.Join(configDir, "deps.edn")))
             File.Copy(
                 Path.Join(installDir, "example-deps.edn"),
                 Path.Join(configDir, "deps.edn"));
@@ -201,6 +205,9 @@ For more info, see:
         string configUser = string.Empty;
         string[] configPaths;
 
+        // I think in this case it does not matter whether whether we have deps.edn or deps-clr.edn.
+        // This is used only to determine wither the user config file is being used or not.
+        // Which actual project file is used is not really relevant.
         if (cliArgs.HasFlag("repro"))
         {
             configPaths = new string[] { Path.Join(installDir, "deps.edn"), "deps.edn" };
@@ -212,7 +219,7 @@ For more info, see:
         }
 
         // Determine whether to use user or project cache
-        var cacheDir = File.Exists("deps.edn") ? ".cpcache" : userCacheDir;
+        var cacheDir = File.Exists("deps-clr.edn") || File.Exists("deps.edn") ? ".cpcache" : userCacheDir;
 
         // Construct location of cached classpath file
         var cacheVersion = "4";

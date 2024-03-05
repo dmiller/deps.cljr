@@ -8,9 +8,7 @@
 
   :aliases {
     :deps {:replace-paths []
-           ;;:replace-deps {io.github.dmiller/clr.tools.deps.cli { :git/sha "1e24e9639138418999b4ff30385197efef602681"}}
-           ;;;:replace-deps {tools.deps.cli/tools.deps.cli {:local/root  .}}  ;;;for now, in the local root. Eventually, we can pull it in (need gitlibs)  TODO
-           ;;; :replace-deps {org.clojure/tools.deps.cli {:mvn/version "0.9.49"}}  for now, in the local root. Eventually, we can pull it in (need gitlibs)  TODO
+           :replace-deps {io.github.clojure/clr.tools.deps.cli {:git/tag "v0.1.2" :git/sha "8b4c25e" }}
            :ns-default clojure.tools.deps.cli.api
            :ns-aliases {help clojure.tools.deps.cli.help}}
     :test {:extra-paths ["test"]}

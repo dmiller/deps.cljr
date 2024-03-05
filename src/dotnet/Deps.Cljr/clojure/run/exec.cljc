@@ -11,6 +11,7 @@
     ;; NOTE: ONLY depend on Clojure core, loaded in user's classpath so can't have any deps
     [clojure.edn :as edn]
     #?(:clj [clojure.java.io :as jio] :cljr [clojure.clr.io :as cio])
+    #?(:cljr [clojure.tools.deps :as deps])
     [clojure.string :as str]
     [clojure.spec.alpha :as s])
   (:import
@@ -196,6 +197,15 @@
   ;; abnormal exit
   ([^#?(:clj Throwable :cljr Exception) t] (#?(:clj System/exit :cljr Environment/Exit) 1)))
 
+
+#?(:cljr
+
+(defn set-install-dir [] 
+   (let [install-dir (Environment/GetEnvironmentVariable "clojure.cli.install-dir")]
+	 (when install-dir
+	   (reset! deps/install-dir install-dir))))
+)
+
 (defn -main
   "Execute a function with map kvs.
 
@@ -218,6 +228,7 @@
     map built from kpath/v's
     trailing map"
   [& args]
+  #?(:cljr (set-install-dir))
   (try
     (let [execute-args (:argmap (read-basis))
           {:keys [function overrides trailing]} (-> args read-args parse-fn)

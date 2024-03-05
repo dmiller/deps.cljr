@@ -160,7 +160,7 @@
 
   (let [opts' (merge opts {:install-deps (deps/root-deps)
                            :user-deps (read-deps config-user)
-                           :project-deps (read-deps config-project)
+                           :project-deps (or (read-deps "deps-clr.edn") (read-deps config-project))
                            :tool-resolver resolve-tool-args})
         {:keys [basis manifests], trace-log :trace} (run-core opts')
         {:keys [argmap libs classpath-roots]} basis
@@ -168,7 +168,7 @@
     (when trace
       (spit "trace.edn" 
             (binding [*print-namespace-maps* false] (with-out-str (pprint/pprint trace-log)))
-             #?@(:cljr (:file-mode System.IO.FileMode/Truncate))))
+             #?@(:cljr (:file-mode System.IO.FileMode/Create))))
     (when tree
       (-> trace-log tree/trace->tree (tree/print-tree nil)))
     (when-not skip-cp

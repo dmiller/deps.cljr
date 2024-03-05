@@ -3,7 +3,7 @@
     "Deps.Cljr": {
       "commandName": "Project",
       "commandLineArgs": "-Sforce -X:deps list",
-      "workingDirectory": "C:\\work\\clojure\\deps.cljr\\src\\dotnet\\Deps.Cljr\\bin\\Debug\\net6.0\\hello-world\\"
+      "workingDirectory": "C:\\work\\clojure\\test-runner"
     }
   }
 }

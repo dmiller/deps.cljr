@@ -436,7 +436,8 @@ For more info, see:
                 process.StartInfo.CreateNoWindow = false;   // TODO: When done debugging, set to true
                 var env = process.StartInfo.EnvironmentVariables;
                 env["CLOJURE_LOAD_PATH"] = classpath + Path.PathSeparator + installDir;   // TODO -- what is this? need to get the equivalant of exec.jar on the load path
-                 env["clojure.basis"] = basisFile;   // will this do -Dclojure.basis=$BasisFile  ?
+                env["clojure.basis"] = basisFile;  
+                env["clojure.cli.install-dir"] = installDir;
                 var argList = process.StartInfo.ArgumentList;
                 argList.Add(Path.Join(installDir, Path.Join("tools", "run-clojure-main.ps1")));
                 argList.Add("-m");

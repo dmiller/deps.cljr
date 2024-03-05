@@ -1,0 +1,120 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="clojure\tools\cli.cljc" />
+    <None Remove="clojure\tools\cli\api.cljc" />
+    <None Remove="clojure\tools\cli\help.cljc" />
+    <None Remove="clojure\tools\deps.cljc" />
+    <None Remove="clojure\tools\deps\deps.edn" />
+    <None Remove="clojure\tools\deps\extensions.cljc" />
+    <None Remove="clojure\tools\deps\extensions\deps.cljc" />
+    <None Remove="clojure\tools\deps\extensions\git.cljc" />
+    <None Remove="clojure\tools\deps\extensions\local.cljc" />
+    <None Remove="clojure\tools\deps\license-abbrev.edn" />
+    <None Remove="clojure\tools\deps\script\make_classpath2.cljc" />
+    <None Remove="clojure\tools\deps\script\parse.cljc" />
+    <None Remove="clojure\tools\deps\script\resolve_tags.cljc" />
+    <None Remove="clojure\tools\deps\specs.cljc" />
+    <None Remove="clojure\tools\deps\tool.cljc" />
+    <None Remove="clojure\tools\deps\tree.cljc" />
+    <None Remove="clojure\tools\deps\util\concurrent.clj" />
+    <None Remove="clojure\tools\deps\util\concurrent.cljr" />
+    <None Remove="clojure\tools\deps\util\dir.cljc" />
+    <None Remove="clojure\tools\deps\util\io.cljc" />
+    <None Remove="clojure\tools\deps\util\session.cljc" />
+    <None Remove="clojure\tools\gitlibs.cljc" />
+    <None Remove="clojure\tools\gitlibs\config.cljr" />
+    <None Remove="clojure\tools\gitlibs\impl.cljr" />
+    <None Remove="example-deps.edn" />
+    <None Remove="tools\run-clojure-main.ps1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="clojure\tools\cli.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\cli\api.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\cli\help.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\deps.edn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\extensions.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\extensions\deps.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\extensions\git.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\extensions\local.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\license-abbrev.edn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\script\make_classpath2.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\script\parse.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\script\resolve_tags.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\specs.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\tool.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\tree.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\util\concurrent.clj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\util\concurrent.cljr">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\util\dir.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\util\io.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\deps\util\session.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\gitlibs.cljc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\gitlibs\config.cljr">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="clojure\tools\gitlibs\impl.cljr">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="example-deps.edn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="tools\run-clojure-main.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>
